@@ -1,2 +1,3 @@
 data/mnist/train/MNIST
 data/mnist/test/MNIST
+__pycache__
