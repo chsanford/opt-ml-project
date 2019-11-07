@@ -6,6 +6,9 @@ class Cosine:
 	def __init__(self, dim=2):
 		self.dim = dim
 
+	def get_name(self):
+		return "Cosine-" + str(dim)
+
 	# x is a numpy array of length dim
 	def eval(self, x):
 		assert len(x) == self.dim

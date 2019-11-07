@@ -10,6 +10,9 @@ class Octopus:
 		self.S = 2 * self.gamma - 4 * self.L
 		self.v = -1 * self.g1(2 * self.tau) + 4 * self.L * self.tau
 
+	def get_name(self):
+		return "Octopus-2"
+
 	# x is a numpy array of length 2
 	def eval(self, x):
 		return self.h(abs(x[0]), abs(x[1]))
