@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 def run(f, epochs, optimizer, epsilon, is_verbose):
 	print(f.as_string() + "\n")
 
+	steps_to_fosp = None
+	steps_to_sosp = None
+
 	x = f.random_init()
 	f_x_vector = [f.eval(x)]
 	if is_verbose:
@@ -14,6 +17,20 @@ def run(f, epochs, optimizer, epsilon, is_verbose):
 		f_x_vector.append(f.eval(x))
 		if is_verbose:
 			print_epoch(e, f, x, epsilon)
+
+		if steps_to_fosp == None and is_first_order_stationary_point(f, x, epsilon):
+			steps_to_fosp = e
+		if steps_to_sosp == None and is_second_order_stationary_point(f, x, epsilon):
+			steps_to_sosp = e
+
+	if steps_to_fosp == None:
+		print("Did not converge to a " + str(epsilon) + "-first-order stationary-point.")
+	else:
+		print("Converged to a " + str(epsilon) + "-first-order stationary-point after " + str(steps_to_fosp) + " steps.")
+	if steps_to_sosp == None:
+		print("Did not converge to a " + str(epsilon) + "-second-order stationary-point.")
+	else:
+		print("Converged to a " + str(epsilon) + "-second-order stationary-point after " + str(steps_to_sosp) + " steps.")
 
 	plot_results(epochs, f_x_vector)
 

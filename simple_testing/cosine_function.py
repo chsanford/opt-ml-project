@@ -1,24 +1,25 @@
+import math
 import numpy as np
 
-# f(x) = x1^2 + x2^2 + ... + xd^2
-class Quadratic:
+# f(x) = cos(x1) + cos(x2) + ... + cos(xd)
+class Cosine:
 	def __init__(self, dim=2):
 		self.dim = dim
 
 	# x is a numpy array of length dim
 	def eval(self, x):
 		assert len(x) == self.dim
-		return np.square(x).sum()
+		return np.cos(x).sum()
 
 	def grad(self, x):
 		assert len(x) == self.dim
-		return 2 * x
+		return -1 * np.sin(x)
 
 	def hessian(self, x):
-		return 2 * np.identity(self.dim)
+		return np.diag(-1 * np.cos(x))
 
 	def random_init(self):
-		return np.random.rand(self.dim) * 200 - 100
+		return np.random.rand(self.dim) * 4 * math.pi - 2 * math.pi
 
 	def as_string(self):
-		return "f(x) = x1^2 + x2^2 + ... + xd^2"
+		return "f(x) = cos(x1) + cos(x2) + ... + cos(xd)"
