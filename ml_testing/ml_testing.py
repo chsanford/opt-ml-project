@@ -42,19 +42,21 @@ class MLTest():
 	def train(self, epoch):
 		self.network.train()
 		for batch_idx, (data, target) in enumerate(self.train_loader):
-			self.optimizer.zero_grad()
-			output = self.network(data)
-			loss = F.nll_loss(output, target)
-			loss.backward()
-			self.optimizer.step()
-			if batch_idx % log_interval == 0:
-				print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-			        epoch, batch_idx * len(data), len(self.train_loader.dataset),
-			        100. * batch_idx / len(self.train_loader), loss.item()))
-				self.train_losses.append(loss.item())
-				self.train_counter.append((batch_idx*64) + ((epoch-1)*len(self.train_loader.dataset)))
-				torch.save(self.network.state_dict(), 'results/mnist/model.pth')
-				torch.save(self.optimizer.state_dict(), 'results/mnist/optimizer.pth')
+		    def closure():
+		        self.optimizer.zero_grad()
+		        output = self.network(data)
+		        loss = F.nll_loss(output, target)
+		        loss.backward()
+		        return loss
+		    loss = self.optimizer.step(closure)
+		    if batch_idx % log_interval == 0:
+		        print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+		            epoch, batch_idx * len(data), len(self.train_loader.dataset),
+		            100. * batch_idx / len(self.train_loader), loss.item()))
+		        self.train_losses.append(loss.item())
+		        self.train_counter.append((batch_idx*64) + ((epoch-1)*len(self.train_loader.dataset)))
+		        torch.save(self.network.state_dict(), 'results/mnist/model.pth')
+		        torch.save(self.optimizer.state_dict(), 'results/mnist/optimizer.pth')
 
 	def test(self):
 		self.network.eval()

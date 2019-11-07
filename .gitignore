@@ -1,3 +1,7 @@
 data/mnist/train/MNIST
 data/mnist/test/MNIST
 __pycache__
+*.pyc
+*.swp
+*.DS_Store
+*.pth
