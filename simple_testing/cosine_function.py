@@ -7,7 +7,7 @@ class Cosine:
 		self.dim = dim
 
 	def get_name(self):
-		return "Cosine-" + str(dim)
+		return "Cosine-" + str(self.dim)
 
 	# x is a numpy array of length dim
 	def eval(self, x):
