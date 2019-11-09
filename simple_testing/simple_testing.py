@@ -13,7 +13,7 @@ def run(f, epochs, optimizer, epsilon, is_verbose):
 		print_epoch(0, f, x, epsilon)
 
 	for e in range(1, epochs + 1):
-		x = optimizer.step_not_ml(f, x)
+		x = optimizer.step_not_ml(f, x, is_verbose)
 		f_x_vector.append(f.eval(x))
 		if is_verbose:
 			print_epoch(e, f, x, epsilon)

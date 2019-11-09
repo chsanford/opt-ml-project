@@ -6,7 +6,7 @@ class Quadratic:
 		self.dim = dim
 
 	def get_name(self):
-		return "Quadratic-" + str(dim)
+		return "Quadratic-" + str(self.dim)
 
 	# x is a numpy array of length dim
 	def eval(self, x):

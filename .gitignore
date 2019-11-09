@@ -1,4 +1,5 @@
 data/*
+results/*
 .idea
 __pycache__
 *.pyc
