@@ -6,33 +6,32 @@ import torchvision
 import matplotlib.pyplot as plt
 
 from ml_testing.ml_testing import MLTest
+from models.ffnn import FFNN
+from models.cnn import CNN
 
-view_example_images = False
-
-# Defines network
-class Net(nn.Module):
-	def __init__(self):
-		super(Net, self).__init__()
-		self.fc1 = nn.Linear(28 * 28, 10)
-
-	def forward(self, x):
-		x = x.view(-1, 28 * 28)
-		x = self.fc1(x)
-		return F.log_softmax(x)
 
 class MnistTest(MLTest):
-	def __init__(self):
-		self.network = Net()
-		MLTest.__init__(self)
+	view_example_images = False
+	loss = F.nll_loss
 
-	def run(self, n_epochs, optimizer):
-		if view_example_images:
+	def __init__(self, ff=True):
+		MLTest.__init__(self)
+		self.network = FFNN() if ff else CNN()
+
+	def run(self, n_epochs, optimizer, sgd=False):
+		if self.view_example_images:
 			self.visualize_data()
-		super().run(n_epochs, optimizer, self.get_train_loader(), self.get_test_loader(), self.network)
+		super().run(n_epochs,
+					optimizer,
+					self.get_train_loader(sgd),
+					self.get_test_loader(),
+					self.network,
+					MnistTest.loss,
+					sgd)
 
 	# Loads training data
-	def get_train_loader(self):
-		batch_size_train = 60000 # all samples
+	def get_train_loader(self, sgd=False):
+		batch_size_train = 1 if sgd else 60000 # all samples
 		train_loader = torch.utils.data.DataLoader(
 			torchvision.datasets.MNIST(
 				'data/mnist/train',

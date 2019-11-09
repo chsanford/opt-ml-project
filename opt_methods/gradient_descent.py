@@ -5,6 +5,7 @@ import torch
 from torch.optim.optimizer import Optimizer, required
 
 # Defines gradient descent optimizer with options: noise, AGD(Nesterov momentum), or NCE(negative curvature exploitation)
+# TODO: Possibly add weight_decay support (L2 reg)
 class GradientDescent(Optimizer):
     # correspondence with parameters in the paper is as follows:
     # learning_rate: eta, noise_r: r, noise_L: L, noise_eps: epsilon
