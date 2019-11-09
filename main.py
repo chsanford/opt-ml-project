@@ -7,43 +7,42 @@ from simple_testing.quadratic_function import Quadratic
 from simple_testing.simple_testing import run
 
 # A simple test of vanilla gradient descent on f(x) = x_1^2 + x_2^2 for a random initialization
-#gd_function_optimizer = GradientDescent(False, learning_rate=0.1)
-#run(Quadratic(), 100, gd_function_optimizer, 0.1, True)
+# gd_function_optimizer = GradientDescent(False, learning_rate=0.1)
+# run(Quadratic(), 100, gd_function_optimizer, 0.1, True)
 
 mnist_ffnn_test = MnistTest(ff=True)
 mnist_cnn_test = MnistTest(ff=False)
 mf_test = MatrixFactorizationTest()
 
 gd_ml_optimizer = GradientDescent(
-	True,
-	neural_net_params = mnist_ffnn_test.network.parameters(),
-	learning_rate = 0.1,
-	noise_r = 0,
-	momentum = 0,
-    NCE = False
+    True,
+    neural_net_params=mnist_ffnn_test.network.parameters(),
+    learning_rate=0.1,
+    noise_r=0,
+    momentum=0,
+    NCE=False
 )
 
 gd_ml_all_optimizer = GradientDescent(
-	True,
-	neural_net_params = mnist_ffnn_test.network.parameters(),
-	learning_rate = 0.1,
-	noise_r = 0.1,
-	momentum = 0.5,
-    NCE = True
+    True,
+    neural_net_params=mnist_ffnn_test.network.parameters(),
+    learning_rate=0.1,
+    noise_r=0.1,
+    momentum=0.5,
+    NCE=True
 )
 
 mf_gd_optim = GradientDescent(
-	True,
-	neural_net_params=mf_test.model.parameters(),
-	learning_rate = 0.1,
-	noise_r = 0,
-	momentum = 0,
-	NCE = False
+    True,
+    neural_net_params=mf_test.model.parameters(),
+    learning_rate=0.1,
+    noise_r=0,
+    momentum=0,
+    NCE=False
 )
 
-#mnist_ffnn_test.run(1, torch.optim.Adam(mnist_ffnn_test.network.parameters()), sgd=True)
-#mnist_cnn_test.run(1, torch.optim.Adam(mnist_cnn_test.network.parameters()), sgd=True)
-#mf_test.run(10, torch.optim.SGD(mf_test.model.parameters(), lr=0.01), sgd=True)
-mf_test.run(10, torch.optim.Adam(mf_test.model.parameters()), sgd=True)
-#mnist_ffnn_test.run(20, gd_ml_optimizer)
-#mnist_ffnn_test.run(20, gd_ml_all_optimizer)
+# mnist_ffnn_test.run(1, torch.optim.Adam(mnist_ffnn_test.network.parameters()), sgd=True)
+# mnist_cnn_test.run(1, torch.optim.Adam(mnist_cnn_test.network.parameters()), sgd=True)
+mf_test.run(10, torch.optim.SGD(mf_test.model.parameters(), lr=0.01), sgd=True)
+# mnist_ffnn_test.run(20, gd_ml_optimizer)
+# mnist_ffnn_test.run(20, gd_ml_all_optimizer)

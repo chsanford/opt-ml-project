@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class MatrixFactorization(nn.Module):
     def __init__(self, n, m, r):
         super().__init__()

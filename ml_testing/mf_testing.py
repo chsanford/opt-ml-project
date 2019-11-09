@@ -17,7 +17,6 @@ class MatrixFactorizationTest(MLTest):
         self.r = 20  # factorization rank
         self.model = MatrixFactorization(n_users, n_movies, self.r)
 
-
     def run(self, n_epochs, optimizer, sgd=False):
         super().run(n_epochs,
                     optimizer,
@@ -27,22 +26,19 @@ class MatrixFactorizationTest(MLTest):
                     MatrixFactorizationTest.loss,
                     sgd)
 
-
     def get_train_loader(self, sgd=False):
         return torch.utils.data.DataLoader(
             self.train_dataset,
-            batch_size = 1 if sgd else len(self.train_dataset),
+            batch_size=1 if sgd else len(self.train_dataset),
             shuffle=True
         )
-
 
     def get_test_loader(self):
         return torch.utils.data.DataLoader(
             self.test_dataset,
-            batch_size = len(self.test_dataset),
+            batch_size=len(self.test_dataset),
             shuffle=True
         )
-
 
     def visualize_data(self):
         pass

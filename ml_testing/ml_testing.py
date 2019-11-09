@@ -27,7 +27,7 @@ class MLTest():
         self.train_losses = []
         self.train_counter = []
         self.test_losses = []
-        self.test_counter = [i*len(self.train_loader.dataset) for i in range(n_epochs + 1)]
+        self.test_counter = [i * len(self.train_loader.dataset) for i in range(n_epochs + 1)]
         idt = lambda x: x
         idt.__name__ = ''
         self.loss_metric = math.sqrt if self.loss == F.mse_loss else idt  # report RMSE if doing matrix factorization
@@ -65,22 +65,22 @@ class MLTest():
             loss = self.optimizer.step(closure)
             total_loss += loss.item()
 
-            if not self.sgd or (batch_idx+1) % self.log_interval == 0:
+            if not self.sgd or (batch_idx + 1) % self.log_interval == 0:
                 avg_loss = total_loss / (self.log_interval if self.sgd else n_train)
 
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\t{}: {:.6f}'.format(
                     epoch,
-                    (batch_idx+1) * len(data),
+                    (batch_idx + 1) * len(data),
                     n_train,
                     100. * batch_idx / len(self.train_loader),
                     f'{self.loss_metric.__name__} {self.loss.__name__}',
                     self.loss_metric(avg_loss)))
 
                 self.train_losses.append(self.loss_metric(avg_loss))
-                self.train_counter.append(len(data) * batch_idx + (epoch-1) * n_train)
+                self.train_counter.append(len(data) * batch_idx + (epoch - 1) * n_train)
                 total_loss = 0
-                #torch.save(self.network.state_dict(), 'results/mnist/model.pth')
-                #torch.save(self.optimizer.state_dict(), 'results/mnist/optimizer.pth')
+                # torch.save(self.network.state_dict(), 'results/mnist/model.pth')
+                # torch.save(self.optimizer.state_dict(), 'results/mnist/optimizer.pth')
 
     def test(self):
         self.network.eval()
