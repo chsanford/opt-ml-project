@@ -8,19 +8,20 @@ from collections import defaultdict
 
 
 # Defines gradient descent optimizer with options: noise, AGD(Nesterov momentum), or NCE(negative curvature exploitation)
-# TODO: Possibly add weight_decay support (L2 reg)
 class GradientDescent(Optimizer):
+    param_names = ['lr', 'noise_r', 'noise_T', 'noise_eps', 'momentum', 'NCE', 'NCE_s', 'NCE_gamma']
+
     # correspondence with parameters in the paper is as follows:
-    # learning_rate: eta, noise_r: r, noise_T: L, noise_eps: epsilon
+    # lr: eta, noise_r: r, noise_T: L, noise_eps: epsilon
     # momentum: 1-theta, NCE_s: s, NCE_gamma: gamma (gamma should be theta^2/eta)
-    def __init__(self, is_ml, neural_net_params=None, learning_rate=0.1, noise_r=0.1, noise_T=10, noise_eps=0.1,
-                 momentum=0, NCE=False, NCE_s=0.1, NCE_gamma=2.5):
+    def __init__(self, neural_net_params, is_ml=True, lr=0.1, noise_r=0.1, noise_T=10, noise_eps=0.1,
+                 momentum=0, NCE=False, NCE_s=0.1, NCE_gamma=2.5, is_verbose=False):
         self.is_ml = is_ml
         if is_ml:
             Optimizer.__init__(self, neural_net_params, dict())
         else:
             self.state = defaultdict(dict)
-        self.learning_rate = learning_rate
+        self.lr = lr
         self.noise_r = noise_r
         self.noise_T = noise_T
         self.noise_eps = noise_eps
@@ -28,8 +29,19 @@ class GradientDescent(Optimizer):
         self.NCE = NCE
         self.NCE_s = NCE_s
         self.NCE_gamma = NCE_gamma
+        self.is_verbose = is_verbose
 
-    def step(self, closure=None, is_verbose=True):
+
+    # need this for skorch to work
+    def _check_params(self):
+        group = self.param_groups[0]
+        for param_name in self.param_names:
+            if param_name in group:
+                setattr(self, param_name, group[param_name])
+
+
+    def step(self, closure=None):
+        self._check_params()
         assert self.is_ml
         # NCE is only defined for AGD
         if self.NCE:
@@ -55,7 +67,7 @@ class GradientDescent(Optimizer):
                 param_state['noise_count'] = 0
             all_grad = torch.cat([p.grad.reshape(-1) for p in params], dim=0)
             all_grad_norm = torch.norm(all_grad, p=2).item()
-            if is_verbose:
+            if self.is_verbose:
                 print("*Noise part* grad l2 norm: %.3f, count: %d" % (all_grad_norm, param_state['noise_count']))
             if all_grad_norm <= self.noise_eps and param_state['noise_count'] >= self.noise_T:
                 param_state['noise_count'] = 0
@@ -63,7 +75,7 @@ class GradientDescent(Optimizer):
                 gauss = torch.randn(all_grad.size())
                 normed_gauss = gauss.div(torch.norm(gauss, p=2))
                 noise = normed_gauss.mul(radius)
-                if is_verbose:
+                if self.is_verbose:
                     print("add noise with l2 norm:", radius)
                 i = 0
                 for p in params:
@@ -71,7 +83,7 @@ class GradientDescent(Optimizer):
                     i = i + p.numel()
             else:
                 param_state['noise_count'] += 1
-                if is_verbose:
+                if self.is_verbose:
                     print("no noise added")
 
         # AGD
@@ -99,11 +111,11 @@ class GradientDescent(Optimizer):
                     yt = torch.cat([yt, torch.clone(p.data).detach().reshape(-1)], dim=0)
                     g_yt = torch.cat([g_yt, torch.clone(p.grad.data).detach().reshape(-1)], dim=0)
                     f_yt = loss.item()
-                p.data.add_(-self.learning_rate, p.grad.data)
-                buf.mul_(self.momentum).add_(-self.learning_rate, p.grad.data)
+                p.data.add_(-self.lr, p.grad.data)
+                buf.mul_(self.momentum).add_(-self.lr, p.grad.data)
         else:
             for p in params:
-                p.data.add_(-self.learning_rate, p.grad.data)
+                p.data.add_(-self.lr, p.grad.data)
 
         # NCE
         def copy_to_p(params, update):
@@ -114,7 +126,7 @@ class GradientDescent(Optimizer):
 
         if self.NCE:
             norm_vt = torch.norm(vt, p=2)
-            if is_verbose:
+            if self.is_verbose:
                 print(
                     "*NCE part* f(xt): %.3f, f(yt): %.3f, <grad_f(yt),xt-yt>: %.3f, ||xt-yt||^2: %.3f, ||vt||: %.3f" % (
                     f_xt, f_yt, g_yt.dot((xt - yt)).item(), torch.norm((xt - yt), p=2).pow(2).item(), norm_vt.item()))
@@ -122,7 +134,7 @@ class GradientDescent(Optimizer):
             torch.norm((xt - yt), p=2).pow(2)):
                 if norm_vt >= self.NCE_s:
                     copy_to_p(params, xt)
-                    if is_verbose:
+                    if self.is_verbose:
                         print("setting x_{t+1} = xt")
                 else:
                     delta = vt.mul(self.NCE_s).div(norm_vt)
@@ -131,19 +143,20 @@ class GradientDescent(Optimizer):
                     copy_to_p(params, xt - delta)
                     loss = closure()
                     if (loss_ < loss):
-                        if is_verbose:
+                        if self.is_verbose:
                             print("setting x_{t+1} = xt + delta")
                         copy_to_p(params, xt + delta)
                         loss = closure()
                     else:
-                        if is_verbose:
+                        if self.is_verbose:
                             print("setting x_{t+1} = xt - delta")
             else:
-                if is_verbose:
+                if self.is_verbose:
                     print("no change by NCE")
         return loss
 
-    def step_not_ml(self, f, x, is_verbose=True):
+    def step_not_ml(self, f, x):
+        self._check_params()
         assert not self.is_ml
         # NCE is only defined for AGD
         if self.NCE:
@@ -155,7 +168,7 @@ class GradientDescent(Optimizer):
         if self.noise_r > 0:
             if 'noise_count' not in state:
                 state['noise_count'] = 0
-            if is_verbose:
+            if self.is_verbose:
                 print("*Noise part* grad l2 norm: %.3f, count: %d" % (
                 np.linalg.norm(f.grad(x), ord=2), state['noise_count']))
             if np.linalg.norm(f.grad(x), ord=2) <= self.noise_eps and state['noise_count'] >= self.noise_T:
@@ -163,12 +176,12 @@ class GradientDescent(Optimizer):
                 radius = pow(np.random.uniform(0, 1, 1)[0], 1.0 / x.size) * self.noise_r
                 gauss = np.random.normal(0, 1, x.size)
                 noise = gauss / np.linalg.norm(gauss, ord=2) * radius
-                if is_verbose:
+                if self.is_verbose:
                     print("add noise with l2 norm:", radius)
                 x = x + noise
             else:
                 state['noise_count'] += 1
-                if is_verbose:
+                if self.is_verbose:
                     print("no noise added")
 
         # AGD
@@ -178,15 +191,15 @@ class GradientDescent(Optimizer):
             vt = state['momentum_buffer']
             xt = x
             yt = x + self.momentum * vt
-            x = yt - self.learning_rate * f.grad(yt)
-            state['momentum_buffer'] = self.momentum * vt - self.learning_rate * f.grad(yt)
+            x = yt - self.lr * f.grad(yt)
+            state['momentum_buffer'] = self.momentum * vt - self.lr * f.grad(yt)
         else:
-            x = x - self.learning_rate * f.grad(x)
+            x = x - self.lr * f.grad(x)
 
         # NCE
         if self.NCE:
             norm_vt = np.linalg.norm(vt, ord=2)
-            if is_verbose:
+            if self.is_verbose:
                 print(
                     "*NCE part* f(xt): %.3f, f(yt): %.3f, <grad_f(yt),xt-yt>: %.3f, ||xt-yt||^2: %.3f, ||vt||: %.3f" % (
                     f.eval(xt), f.eval(yt), np.dot(f.grad(yt), xt - yt), pow(np.linalg.norm((xt - yt), ord=2), 2),
@@ -195,19 +208,19 @@ class GradientDescent(Optimizer):
                     np.linalg.norm((xt - yt), ord=2), 2):
                 if norm_vt >= self.NCE_s:
                     x = xt
-                    if is_verbose:
+                    if self.is_verbose:
                         print("setting x_{t+1} = xt")
                 else:
                     delta = vt * self.NCE_s / norm_vt
                     if f.eval(xt + delta) < f.eval(xt - delta):
                         x = xt + delta
-                        if is_verbose:
+                        if self.is_verbose:
                             print("setting x_{t+1} = xt + delta")
                     else:
                         x = xt - delta
-                        if is_verbose:
+                        if self.is_verbose:
                             print("setting x_{t+1} = xt - delta")
             else:
-                if is_verbose:
+                if self.is_verbose:
                     print("no change by NCE")
         return x

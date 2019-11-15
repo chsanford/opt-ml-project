@@ -15,27 +15,27 @@ mnist_cnn_test = MnistTest(ff=False)
 mf_test = MatrixFactorizationTest()
 
 gd_ml_optimizer = GradientDescent(
-    True,
-    neural_net_params=mnist_ffnn_test.network.parameters(),
-    learning_rate=0.1,
+    mnist_ffnn_test.network.parameters(),
+    is_ml=True,
+    lr=0.1,
     noise_r=0,
     momentum=0,
     NCE=False
 )
 
 gd_ml_all_optimizer = GradientDescent(
-    True,
-    neural_net_params=mnist_ffnn_test.network.parameters(),
-    learning_rate=0.1,
+    mnist_ffnn_test.network.parameters(),
+    is_ml=True,
+    lr=0.1,
     noise_r=0.1,
     momentum=0.5,
     NCE=True
 )
 
 mf_gd_optim = GradientDescent(
-    True,
-    neural_net_params=mf_test.model.parameters(),
-    learning_rate=0.1,
+    mf_test.model.parameters(),
+    is_ml=True,
+    lr=0.1,
     noise_r=0,
     momentum=0,
     NCE=False
@@ -43,6 +43,9 @@ mf_gd_optim = GradientDescent(
 
 # mnist_ffnn_test.run(1, torch.optim.Adam(mnist_ffnn_test.network.parameters()), sgd=True)
 # mnist_cnn_test.run(1, torch.optim.Adam(mnist_cnn_test.network.parameters()), sgd=True)
-mf_test.run(10, torch.optim.SGD(mf_test.model.parameters(), lr=0.01), sgd=True)
-# mnist_ffnn_test.run(20, gd_ml_optimizer)
-# mnist_ffnn_test.run(20, gd_ml_all_optimizer)
+
+mnist_ffnn_test.run(20, gd_ml_optimizer, sgd=False)
+#mnist_cnn_test.run(20, gd_ml_optimizer, sgd=False)
+
+#mf_test.run(10, torch.optim.SGD(mf_test.model.parameters(), lr=0.01), sgd=True)
+#mf_test.run(10, mf_gd_optim, sgd=False)

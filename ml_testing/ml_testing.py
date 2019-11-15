@@ -66,13 +66,13 @@ class MLTest():
             total_loss += loss.item()
 
             if not self.sgd or (batch_idx + 1) % self.log_interval == 0:
-                avg_loss = total_loss / (self.log_interval if self.sgd else n_train)
+                avg_loss = total_loss / (self.log_interval if self.sgd else 1)
 
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\t{}: {:.6f}'.format(
                     epoch,
                     (batch_idx + 1) * len(data),
                     n_train,
-                    100. * batch_idx / len(self.train_loader),
+                    100. * batch_idx / len(self.train_loader) if self.sgd else 100.,
                     f'{self.loss_metric.__name__} {self.loss.__name__}',
                     self.loss_metric(avg_loss)))
 
