@@ -34,10 +34,11 @@ class GradientDescent(Optimizer):
 
     # need this for skorch to work
     def _check_params(self):
-        group = self.param_groups[0]
-        for param_name in self.param_names:
-            if param_name in group:
-                setattr(self, param_name, group[param_name])
+        if self.is_ml:
+            group = self.param_groups[0]
+            for param_name in self.param_names:
+                if param_name in group:
+                    setattr(self, param_name, group[param_name])
 
 
     def step(self, closure=None):
