@@ -37,8 +37,10 @@ class MLTest():
         start = time.time()
 
         for epoch in range(1, n_epochs + 1):
+            epoch_start = time.time()
             self.train(epoch)
             self.test()
+            print(f'Epoch {epoch} time taken: {(time.time() - epoch_start):4f}')
 
         print(f'Training took {time.time() - start} seconds.')
         fig = plt.figure()
