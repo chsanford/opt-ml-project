@@ -34,10 +34,11 @@ class GradientDescent(Optimizer):
 
     # need this for skorch to work
     def _check_params(self):
-        group = self.param_groups[0]
-        for param_name in self.param_names:
-            if param_name in group:
-                setattr(self, param_name, group[param_name])
+        if self.is_ml:
+            group = self.param_groups[0]
+            for param_name in self.param_names:
+                if param_name in group:
+                    setattr(self, param_name, group[param_name])
 
 
     def step(self, closure=None):
@@ -132,6 +133,8 @@ class GradientDescent(Optimizer):
                     f_xt, f_yt, g_yt.dot((xt - yt)).item(), torch.norm((xt - yt), p=2).pow(2).item(), norm_vt.item()))
             if norm_vt > 0 and f_xt <= f_yt + g_yt.dot((xt - yt)) - self.NCE_gamma / 2 * (
             torch.norm((xt - yt), p=2).pow(2)):
+                for p in params:
+                    self.state[p]['momentum_buffer'] = torch.zeros(p.size())
                 if norm_vt >= self.NCE_s:
                     copy_to_p(params, xt)
                     if self.is_verbose:
@@ -206,6 +209,7 @@ class GradientDescent(Optimizer):
                     norm_vt))
             if norm_vt > 0 and f.eval(xt) <= f.eval(yt) + np.dot(f.grad(yt), xt - yt) - self.NCE_gamma / 2 * pow(
                     np.linalg.norm((xt - yt), ord=2), 2):
+                state['momentum_buffer'] = np.zeros(x.size)
                 if norm_vt >= self.NCE_s:
                     x = xt
                     if self.is_verbose:
