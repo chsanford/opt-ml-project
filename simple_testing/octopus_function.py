@@ -47,6 +47,7 @@ class Octopus:
             return L * (u1 - 4 * tau) ** 2 + L * (u2 - 4 * tau) ** 2 - 2 * v
         else:
             print("ERROR: Out of domain!")
+            raise ValueError
 
     def h_grad(self, u1, u2):
         gamma = self.gamma

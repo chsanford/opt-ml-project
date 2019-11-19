@@ -2,10 +2,11 @@ import numpy as np
 import itertools
 
 from opt_methods.gradient_descent import GradientDescent
+from simple_testing.simple_testing import is_first_order_stationary_point, is_second_order_stationary_point
 
 from simple_testing.quadratic_function import Quadratic 
 from simple_testing.cosine_function import Cosine 
-from simple_testing.octopus_function import Octopus
+from simple_testing.octopus_function import Octopus 
 
 
 
@@ -25,14 +26,19 @@ def interpolate(min, max, num_imdt_values):
 # function: function to be minimized
 # fixed_params is a dict of scalars, search_params is a dict ((min, max), num_imdt_values)
 # set num_imdt_values >= 0 for linear search, None for log10 search
-def grid_search(function, fixed_params=dict(), search_params=dict(), max_epochs=200, num_runs=10, verbose=True):
+def grid_search(function, fixed_params=dict(), search_params=dict(), max_epochs=200, num_runs=10, metric='loss', eps=0.1, verbose=True):
     searchs = dict()
+    fixed_params.update({'noise_eps':eps})
     for p, t in search_params.items():
         searchs[p] = interpolate(t[0][0], t[0][1], t[1])
     keys, values = zip(*searchs.items())
     params = [dict(zip(keys, v)) for v in itertools.product(*values)]
-    means = []
-    stds = []
+    loss_means = []
+    loss_stds = []
+    first_means = []
+    first_stds = []
+    second_means = []
+    second_stds = []
 
     for kwargs in params:
         kwargs.update(fixed_params)
@@ -40,7 +46,10 @@ def grid_search(function, fixed_params=dict(), search_params=dict(), max_epochs=
             print(f'Optimizing with parameters {kwargs}')
         optimizer = GradientDescent(None, is_ml=False, is_verbose=False, **kwargs)
         loss = []
+        firsts = []
+        seconds = []
         for j in range(num_runs):
+            first = second = max_epochs
             if verbose:
                 print(f'Run [{j+1}/{num_runs}]')
                 print(f'{"epochs":>12}{"loss":>12}')
@@ -48,21 +57,40 @@ def grid_search(function, fixed_params=dict(), search_params=dict(), max_epochs=
             x = function.random_init()
             print(f'{"0":>12}{function.eval(x):>12.4f}')
             for step in range(max_epochs):
-                x = optimizer.step_not_ml(function, x)
+                try:
+                    x = optimizer.step_not_ml(function, x)
+                    if first == max_epochs and is_first_order_stationary_point(function, x, eps):
+                        first = step + 1
+                    if second == max_epochs and is_second_order_stationary_point(function, x, eps):
+                        second = step + 1
+                except:
+                    x = function.random_init()
+                    first = second = max_epochs
+                    break
                 if verbose:
                     print(f'{step+1:>12}{function.eval(x):>12.4f}')
             loss.append(function.eval(x)) 
-        means.append(np.mean(loss))
-        stds.append(np.std(loss))
+            firsts.append(first)
+            seconds.append(second)
+        loss_means.append(np.mean(loss))
+        loss_stds.append(np.std(loss))
+        first_means.append(np.mean(firsts))
+        first_stds.append(np.std(firsts))
+        second_means.append(np.mean(seconds))
+        second_stds.append(np.std(seconds))
 
     print("Best parameters set found on development set:")
-    best_param = params[np.argmin(means)]
+    if metric == 'first':
+        best_param = params[np.argmin(first_means)]
+    elif metric == 'second':
+        best_param = params[np.argmin(second_means)]
+    else:
+        best_param = params[np.argmin(loss_means)]
     print(best_param)
     print()
     print("Grid scores on development set:")
-    for mean, std, param in zip(means, stds, params):
-        print("%0.3f (+/-%0.03f) for %r"
-              % (mean, std * 2, param))
+    for i in range(len(params)):
+        print(f'loss: {loss_means[i]:.3f} (+/-{loss_stds[i]:.3f}), first: {first_means[i]:.3f} (+/-{first_stds[i]:.3f}), second: {second_means[i]:.3f} (+/-{second_stds[i]:.3f}) for {params[i]}')
 
     return best_param
 
@@ -70,18 +98,16 @@ def grid_search(function, fixed_params=dict(), search_params=dict(), max_epochs=
 # Wrapper allows for sequential searches over the parameters
 # max_epochs: max number of steps by the optimizer
 # num_runs: number of runs to average over
-def run(function, searches, fixed_params=dict(), max_epochs=20, num_runs=3, verbose=True):
+# metric: optimize over which metric, should be 'loss' or 'first' or 'second'
+def run(function, searches, fixed_params=dict(), max_epochs=20, num_runs=3, metric='loss', eps=0.1, verbose=True):
     print(f'{function}, running searches {searches} with fixed params {fixed_params}')
-
-    max_epochs = 10
-    num_runs = 3
 
     for i, search_params in enumerate(searches):
         s = f'Search [{i+1}/{len(searches)}] {search_params} with fixed params {fixed_params}'
         print(f"{''.ljust(len(s), '=')}\n{s}\n{''.ljust(len(s), '=')}\n")
 
         params = grid_search(function, fixed_params=fixed_params, search_params=search_params,
-                             max_epochs=max_epochs, num_runs=num_runs, verbose=verbose)
+                             max_epochs=max_epochs, num_runs=num_runs, metric=metric, eps=eps, verbose=verbose)
         fixed_params.update(params)
 
     print(f'\nAll done, final parameters: {fixed_params}')
@@ -93,4 +119,5 @@ seq_searches = [{'lr': [(0.01, 0.1), 0]},
 sim_searches = [{'lr': [(0.1, 0.5), 3],
                  'momentum': [(0.1, 0.5), 3]}]
 
-run(Quadratic(), sim_searches, max_epochs=10, num_runs=3, verbose=True)
+#run(Quadratic(), sim_searches, max_epochs=10, num_runs=3, metric='loss', eps=0.1, verbose=True)
+run(Octopus(), sim_searches, max_epochs=200, num_runs=5, metric='second', eps=0.1, verbose=True)
