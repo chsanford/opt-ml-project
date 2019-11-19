@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn.functional as F
 
@@ -8,8 +9,9 @@ from models.matrix_factorization import MatrixFactorization
 
 class MatrixFactorizationTest(MLTest):
     loss = F.mse_loss
+    path = './results/mf/model.pth'
 
-    def __init__(self):
+    def __init__(self, load_model=False):
         super().__init__()
         self.train_dataset = MovieLensDataset(train=True)
         self.test_dataset = MovieLensDataset(train=False)
@@ -17,28 +19,49 @@ class MatrixFactorizationTest(MLTest):
         self.r = 20  # factorization rank
         self.model = MatrixFactorization(n_users, n_movies, self.r)
 
-    def run(self, n_epochs, optimizer, sgd=False):
+        if load_model:
+            print(f'Loading model from {self.path}')
+            state_dict = torch.load(self.path)
+            self.model.load_state_dict(state_dict, strict=True)
+
+
+    def run(self, n_epochs, optimizer, sgd=False, save_model=False):
         super().run(n_epochs,
                     optimizer,
                     self.get_train_loader(sgd),
                     self.get_test_loader(),
                     self.model,
                     MatrixFactorizationTest.loss,
-                    sgd)
+                    sgd,
+                    save_model=save_model)
+
 
     def get_train_loader(self, sgd=False):
         return torch.utils.data.DataLoader(
             self.train_dataset,
             batch_size=1 if sgd else len(self.train_dataset),
-            shuffle=True
+            shuffle=sgd
         )
+
 
     def get_test_loader(self):
         return torch.utils.data.DataLoader(
             self.test_dataset,
             batch_size=len(self.test_dataset),
-            shuffle=True
+            shuffle=False
         )
+
+
+    def _save_model(self):
+        print(f'Saving model to {self.path}')
+
+        if not os.path.exists('results'):
+            os.makedirs('results')
+        if not os.path.exists('results/mf'):
+            os.makedirs('results/mf')
+
+        torch.save(self.model.state_dict(), self.path)
+
 
     def visualize_data(self):
         pass

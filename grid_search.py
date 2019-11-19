@@ -12,6 +12,7 @@ from sklearn.model_selection import KFold, ParameterGrid
 from models.ffnn import FFNN
 from models.cnn import CNN
 from models.matrix_factorization import MatrixFactorization
+from ml_testing.mf_testing import MatrixFactorizationTest
 from opt_methods.gradient_descent import GradientDescent
 from datasets.MovieLens import MovieLensDataset
 
@@ -40,7 +41,7 @@ def load_dataset(dataset):
 class GridSearchCV():
     scoring_options = ['accuracy', 'rmse']
 
-    def __init__(self, model_, optimizer_, params, cv=2, verbose=True, max_epochs=20, scoring='accuracy', sgd=False, module_params=dict()):
+    def __init__(self, model_, optimizer_, params, cv=2, verbose=True, max_epochs=20, scoring='accuracy', sgd=False, module_params=dict(), initial_state=None, all_folds=False):
         assert not sgd  # not supported right now
         self.model_ = model_
         self.optimizer_ = optimizer_
@@ -49,11 +50,21 @@ class GridSearchCV():
         self.n_splits = cv
         self.max_epochs = max_epochs
         self.verbose = verbose
+        self.initial_state = initial_state
+        self.all_folds = all_folds
         if scoring not in GridSearchCV.scoring_options:
             raise Error(f'Unknown scoring {self.scoring}')
         self.scoring = scoring
         if self.verbose:
             print(params)
+
+
+    # Drop test indices that weren't in the training set if MF
+    def _check_mf(self, X, train_idx, test_idx):
+        if self.model_ == MatrixFactorization:
+            test_idx = test_idx[np.in1d(X[test_idx][:, 0], X[train_idx][:, 0])]
+            test_idx = test_idx[np.in1d(X[test_idx][:, 1], X[train_idx][:, 1])]
+        return test_idx
 
 
     def fit(self, X, y):
@@ -67,13 +78,21 @@ class GridSearchCV():
             scores = []
 
             for train_idx, test_idx in kf.split(X):
+                test_idx = self._check_mf(X, train_idx, test_idx)
                 model = self.model_(**self.module_params)
+
+                if self.initial_state is not None:
+                    model.load_state_dict(self.initial_state, strict=True)
+
                 optimizer = self.optimizer_(model.parameters(), is_ml=True, **params)
                 scores.append(self._fit_and_score(model,
                                                   X, y,
                                                   optimizer,
                                                   train_idx,
                                                   test_idx))
+
+                if not self.all_folds:
+                    break
 
             self.cv_results_['params'].append(params)
             self.cv_results_['mean_test_score'].append(np.mean(scores))
@@ -94,6 +113,7 @@ class GridSearchCV():
 
         for epoch in range(self.max_epochs):
             start = time.time()
+            model.train()
             train_loss = optimizer.step(closure).item()
 
             model.eval()
@@ -101,6 +121,7 @@ class GridSearchCV():
                 output = model(X[test_idx])
                 valid_loss = loss_fn_(output, y[test_idx], reduction='mean')
                 if not np.isfinite(valid_loss):
+                    valid_loss = np.nan
                     break
                 if self.scoring == 'accuracy':
                     pred = output.data.max(1, keepdim=True)[1]
@@ -128,7 +149,7 @@ def interpolate(min, max, num_imdt_values):
     if num_imdt_values is not None:  # linear search
         assert num_imdt_values >= 0
         step = (max - min) / (num_imdt_values + 1)
-        return [min + i * step for i in range(num_imdt_values + 2)]
+        return [round(min + i * step, 5) for i in range(num_imdt_values + 2)]
     else:  # log10 search
         min_exp = int(np.ceil(np.log10(min)))
         max_exp = int(np.floor(np.log10(max)))
@@ -138,7 +159,8 @@ def interpolate(min, max, num_imdt_values):
 # fixed_params is a dict of scalars, search_params is a dict ((min, max), num_imdt_values)
 # set num_imdt_values >= 0 for linear search, None for log10 search
 def grid_search(module_, X, y, cv=2, dims=None,
-                fixed_params=dict(), search_params=dict(), max_epochs=20, sgd=False, verbose=True):
+                fixed_params=dict(), search_params=dict(), max_epochs=20, sgd=False, verbose=True,
+                initial_state=None):
     optimizer = torch.optim.SGD if sgd else GradientDescent
     params = dict()
 
@@ -157,7 +179,7 @@ def grid_search(module_, X, y, cv=2, dims=None,
 
     gs = GridSearchCV(module_, optimizer, params,
                       cv=cv, verbose=verbose, max_epochs=max_epochs,
-                      scoring=scoring, sgd=sgd, module_params=kwargs)
+                      scoring=scoring, sgd=sgd, module_params=kwargs, initial_state=initial_state)
     gs.fit(X, y)
 
     print(f'Best parameters set found on development set:\n{gs.best_params_}')
@@ -172,12 +194,10 @@ def grid_search(module_, X, y, cv=2, dims=None,
 
 
 # Wrapper allows for sequential searches over the parameters
-def run(module_, dataset, searches, fixed_params=dict(), verbose=True):
+def run(module_, dataset, searches, fixed_params=dict(), cv=2, max_epochs=20, verbose=True, initial_state=None):
     print(f'{module_} with {type(dataset).__name__}, running searches {searches} with fixed params {fixed_params}\n')
-
-    # Tune these!
-    max_epochs = 20
-    cv = 5
+    if initial_state is not None:
+        print('Running with pre-trained parameters.')
 
     X, y = load_dataset(dataset)
     dims = dataset.get_dims() if module_ == MatrixFactorization else None
@@ -188,7 +208,7 @@ def run(module_, dataset, searches, fixed_params=dict(), verbose=True):
 
         params = grid_search(module_, X, y, cv=cv, dims=dims,
                              fixed_params=fixed_params, search_params=search_params,
-                             max_epochs=max_epochs, sgd=False, verbose=verbose)
+                             max_epochs=max_epochs, sgd=False, verbose=verbose, initial_state=initial_state)
         fixed_params.update(params)
 
     print(f'\nAll done, final parameters: {fixed_params}')
@@ -200,5 +220,12 @@ seq_searches = [{'lr': [(0.001, 10), None]},
 sim_searches = [{'lr': [(0.01, 100), None],
                  'momentum': [(0.01, 0.1), 0]}]
 
-run(FFNN, mnist_dataset, seq_searches, verbose=True)
-#run(MatrixFactorization, ml_dataset, sim_searches, verbose=True)
+max_epochs = 100
+cv = 8
+state_dict = torch.load(MatrixFactorizationTest.path)
+
+run(MatrixFactorization, ml_dataset,
+    [{'lr': [(10, 12), 0]}],
+    fixed_params={'momentum': 0.9},
+    initial_state=state_dict,
+    max_epochs=max_epochs, cv=cv, verbose=True)

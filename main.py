@@ -12,7 +12,7 @@ from simple_testing.simple_testing import run
 
 mnist_ffnn_test = MnistTest(ff=True)
 mnist_cnn_test = MnistTest(ff=False)
-mf_test = MatrixFactorizationTest()
+mf_test = MatrixFactorizationTest(load_model=False)
 
 gd_ffnn_optimizer = GradientDescent(
     mnist_ffnn_test.network.parameters(),
@@ -56,5 +56,5 @@ mf_gd_optim = GradientDescent(
 #mnist_ffnn_test.run(20, gd_ffnn_optimizer, sgd=False)
 #mnist_cnn_test.run(1, gd_cnn_optimizer, sgd=False)
 
-#mf_test.run(10, torch.optim.SGD(mf_test.model.parameters(), lr=0.01), sgd=True)
-mf_test.run(500, mf_gd_optim, sgd=False)
+mf_test.run(2, torch.optim.SGD(mf_test.model.parameters(), lr=0.01), sgd=True, save_model=True)
+#mf_test.run(500, mf_gd_optim, sgd=False)

@@ -17,7 +17,7 @@ class MLTest():
         torch.backends.cudnn.enabled = False
         torch.manual_seed(random_seed)
 
-    def run(self, n_epochs, optimizer, train_loader, test_loader, network, loss, sgd):
+    def run(self, n_epochs, optimizer, train_loader, test_loader, network, loss, sgd, save_model=False):
         self.optimizer = optimizer
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -32,15 +32,18 @@ class MLTest():
         idt.__name__ = ''
         self.loss_metric = math.sqrt if self.loss == F.mse_loss else idt  # report RMSE if doing matrix factorization
 
+        start = time.time()
+        self.epoch_start = start
         self.test()
         print(f'Training for {n_epochs} epochs! are we doing sgd? {sgd}')
-        start = time.time()
 
         for epoch in range(1, n_epochs + 1):
-            epoch_start = time.time()
+            self.epoch_start = time.time()
             self.train(epoch)
             self.test()
-            print(f'Epoch {epoch} time taken: {(time.time() - epoch_start):4f}')
+
+        if save_model:
+            self._save_model()
 
         print(f'Training took {time.time() - start} seconds.')
         fig = plt.figure()
@@ -50,6 +53,11 @@ class MLTest():
         plt.xlabel('number of training examples seen')
         plt.ylabel('loss')
         plt.show()
+
+
+    def _save_model(self):
+        raise NotImplementedError()  # implement in subclass
+
 
     def train(self, epoch):
         total_loss = 0
@@ -70,7 +78,7 @@ class MLTest():
             if not self.sgd or (batch_idx + 1) % self.log_interval == 0:
                 avg_loss = total_loss / (self.log_interval if self.sgd else 1)
 
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\t{}: {:.6f}'.format(
+                print('Epoch: {} [{}/{} ({:.0f}%)]\t{}: {:.4f}'.format(
                     epoch,
                     (batch_idx + 1) * len(data),
                     n_train,
@@ -81,8 +89,7 @@ class MLTest():
                 self.train_losses.append(self.loss_metric(avg_loss))
                 self.train_counter.append(len(data) * batch_idx + (epoch - 1) * n_train)
                 total_loss = 0
-                # torch.save(self.network.state_dict(), 'results/mnist/model.pth')
-                # torch.save(self.optimizer.state_dict(), 'results/mnist/optimizer.pth')
+
 
     def test(self):
         self.network.eval()
@@ -101,11 +108,12 @@ class MLTest():
         self.test_losses.append(test_loss)
 
         if self.loss == F.nll_loss:
-            print('\nTest set: {}: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+            print('Test set: {}: {:.4f}, Accuracy: {}/{} ({:.0f}%), dur: {:.2f}'.format(
                 f'{self.loss_metric.__name__} {self.loss.__name__}',
                 test_loss,
                 correct,
                 len(self.test_loader.dataset),
-                100. * correct / len(self.test_loader.dataset)))
+                100. * correct / len(self.test_loader.dataset)),
+                time.time() - self.epoch_start)
         else:
-            print(f'\nTest set: {self.loss_metric.__name__} {self.loss.__name__}: {test_loss:.4f}\n')
+            print(f'Test set: {self.loss_metric.__name__} {self.loss.__name__}: {test_loss:.4f}, dur: {time.time() - self.epoch_start:.2f}\n')
