@@ -28,7 +28,7 @@ class GradientDescent(Optimizer):
         self.momentum = momentum
         self.NCE = NCE
         self.NCE_s = NCE_s
-        self.NCE_gamma = NCE_gamma
+        self.NCE_gamma = pow((1-momentum), 2) / lr
         self.is_verbose = is_verbose
 
 
