@@ -41,7 +41,7 @@ def load_dataset(dataset):
 class GridSearchCV():
     scoring_options = ['accuracy', 'rmse']
 
-    def __init__(self, model_, optimizer_, params, cv=2, verbose=True, max_epochs=20, scoring='accuracy', sgd=False, module_params=dict(), initial_state=None, all_folds=False):
+    def __init__(self, model_, optimizer_, params, cv=2, verbose=True, max_epochs=20, scoring='accuracy', sgd=False, module_params=dict(), initial_state=None, all_folds=False, train_score=True):
         assert not sgd  # not supported right now
         self.model_ = model_
         self.optimizer_ = optimizer_
@@ -51,7 +51,8 @@ class GridSearchCV():
         self.max_epochs = max_epochs
         self.verbose = verbose
         self.initial_state = initial_state
-        self.all_folds = all_folds
+        self.all_folds = all_folds  # whether to perform CV or just use one split
+        self.train_score = train_score  # whether to score based on train or valid loss
         if scoring not in GridSearchCV.scoring_options:
             raise Error(f'Unknown scoring {self.scoring}')
         self.scoring = scoring
@@ -78,20 +79,30 @@ class GridSearchCV():
             scores = []
 
             for train_idx, test_idx in kf.split(X):
-                test_idx = self._check_mf(X, train_idx, test_idx)
+                if self.train_score:  # use all the data for training and scoring
+                    train_idx = range(len(X))
+                    test_idx = []
+                else:
+                    test_idx = self._check_mf(X, train_idx, test_idx)
+
                 model = self.model_(**self.module_params)
 
                 if self.initial_state is not None:
                     model.load_state_dict(self.initial_state, strict=True)
 
-                optimizer = self.optimizer_(model.parameters(), is_ml=True, **params)
+                if self.optimizer_ == GradientDescent:
+                    extra_params = {'is_ml': True}
+                else:
+                    extra_params = {'nesterov': True}
+
+                optimizer = self.optimizer_(model.parameters(), **params, **extra_params)
                 scores.append(self._fit_and_score(model,
                                                   X, y,
                                                   optimizer,
                                                   train_idx,
                                                   test_idx))
 
-                if not self.all_folds:
+                if not self.all_folds or self.train_score:
                     break
 
             self.cv_results_['params'].append(params)
@@ -116,18 +127,27 @@ class GridSearchCV():
             model.train()
             train_loss = optimizer.step(closure).item()
 
-            model.eval()
-            with torch.no_grad():
-                output = model(X[test_idx])
-                valid_loss = loss_fn_(output, y[test_idx], reduction='mean')
-                if not np.isfinite(valid_loss):
-                    valid_loss = np.nan
-                    break
-                if self.scoring == 'accuracy':
-                    pred = output.data.max(1, keepdim=True)[1]
-                    score = pred.eq(y[test_idx].data.view_as(pred)).sum() / float(len(test_idx))
-                elif self.scoring == 'rmse':
-                    score = math.sqrt(valid_loss)
+            if not np.isfinite(train_loss):
+                valid_loss = np.nan
+                break
+
+            if self.train_score:
+                valid_loss = train_loss
+                score = train_loss
+            else:
+                model.eval()
+                with torch.no_grad():
+                    idx = train_idx if self.train_score else test_idx
+                    output = model(X[idx])
+                    valid_loss = loss_fn_(output, y[idx])
+                    if not np.isfinite(valid_loss):
+                        valid_loss = np.nan
+                        break
+                    if self.scoring == 'accuracy':
+                        pred = output.data.max(1, keepdim=True)[1]
+                        score = pred.eq(y[idx].data.view_as(pred)).sum() / float(len(idx))
+                    elif self.scoring == 'rmse':
+                        score = math.sqrt(valid_loss)
 
             if self.verbose:
                 self._log(epoch, train_loss, valid_loss, time.time() - start)
@@ -161,7 +181,9 @@ def interpolate(min, max, num_imdt_values):
 def grid_search(module_, X, y, cv=2, dims=None,
                 fixed_params=dict(), search_params=dict(), max_epochs=20, sgd=False, verbose=True,
                 initial_state=None):
-    optimizer = torch.optim.SGD if sgd else GradientDescent
+    #optimizer = torch.optim.SGD if sgd else GradientDescent
+    optimizer = GradientDescent
+    #optimizer = torch.optim.SGD
     params = dict()
 
     for p, t in search_params.items():
@@ -183,12 +205,12 @@ def grid_search(module_, X, y, cv=2, dims=None,
     gs.fit(X, y)
 
     print(f'Best parameters set found on development set:\n{gs.best_params_}')
-    print("\nGrid scores on development set ({scoring}):")
+    print(f'\nGrid scores on development set ({scoring}):')
     means = gs.cv_results_['mean_test_score']
     stds = gs.cv_results_['std_test_score']
 
     for mean, std, params in zip(means, stds, gs.cv_results_['params']):
-        print(f'{mean:0.3f} (+/-{std * 2:0.03f}) for {params}')
+        print(f'{mean:0.6f} (+/-{std * 2:0.03f}) for {params}')
 
     return gs.best_params_.items()
 
@@ -220,12 +242,20 @@ seq_searches = [{'lr': [(0.001, 10), None]},
 sim_searches = [{'lr': [(0.01, 100), None],
                  'momentum': [(0.01, 0.1), 0]}]
 
-max_epochs = 100
+mf_gd = [{'lr': [(10, 60), 4]}]
+mf_gd2 = [{'lr': [(42, 58), 3]}]
+mf_agd = [{'lr': [(10, 50), 3],
+           'momentum': [(0.1, 0.9), 1]}]
+mf_gd_noise = [{'noise_r': [(0.1, 1), 1],
+                'noise_eps': [(0.1, 10), None],
+                'noise_T': [(1, 15), 2]}]
+
+max_epochs = 200
 cv = 8
 state_dict = torch.load(MatrixFactorizationTest.path)
 
 run(MatrixFactorization, ml_dataset,
-    [{'lr': [(10, 12), 0]}],
-    fixed_params={'momentum': 0.9},
+    [{'momentum': [(0.1, 0.15), 0]}],
+    fixed_params={'weight_decay': 0.001, 'lr': 30},
     initial_state=state_dict,
     max_epochs=max_epochs, cv=cv, verbose=True)
