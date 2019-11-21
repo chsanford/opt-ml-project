@@ -119,5 +119,28 @@ seq_searches = [{'lr': [(0.01, 0.1), 0]},
 sim_searches = [{'lr': [(0.1, 0.5), 3],
                  'momentum': [(0.1, 0.5), 3]}]
 
-#run(Quadratic(), sim_searches, max_epochs=10, num_runs=3, metric='loss', eps=0.1, verbose=True)
-run(Octopus(), sim_searches, max_epochs=200, num_runs=5, metric='second', eps=0.1, verbose=True)
+fixed_1 = {'noise_r': 0, 'momentum': 0, 'NCE': False, 'noise_eps': 0.1}
+searches_1_1 = [{'lr': [(0.0001, 10), None]}]
+searches_1_2 = [{'lr': [(0.04, 0.5), 22]}]
+searches_1_3 = [{'lr': [(0.1, 0.14), 3]}]
+fixed_2 = {'noise_r': 0, 'NCE': False, 'noise_eps': 0.1}
+searches_2_1 = [{'lr': [(0.0001, 10), None], 'momentum': [(0.1,0.9), 7]}]
+searches_2_2 = [{'lr': [(0.04, 0.5), 22], 'momentum': [(0.1,0.9), 7]}]
+searches_2_3 = [{'lr': [(0.06, 0.14), 7], 'momentum': [(0.5, 0.7), 3]}]
+fixed_3 = {'lr': 0.08, 'momentum':0.65, 'NCE': False, 'noise_eps': 0.1}
+searches_3_1 = []
+#1_1
+#run(Octopus(), searches_1_1, fixed_params=fixed_1, max_epochs=500, num_runs=10, metric='second', eps=0.1, verbose=True)
+#1_2
+#run(Octopus(), searches_1_2, fixed_params=fixed_1, max_epochs=200, num_runs=20, metric='second', eps=0.1, verbose=True)
+#1_3
+#run(Octopus(), searches_1_3, fixed_params=fixed_1, max_epochs=200, num_runs=50, metric='second', eps=0.1, verbose=True)
+### choose lr=0.13 for GD
+#2_1
+#run(Octopus(), searches_2_1, fixed_params=fixed_2, max_epochs=200, num_runs=10, metric='second', eps=0.1, verbose=True)
+#2_2
+#run(Octopus(), searches_2_2, fixed_params=fixed_2, max_epochs=200, num_runs=20, metric='second', eps=0.1, verbose=True)
+#2_3
+#run(Octopus(), searches_2_3, fixed_params=fixed_2, max_epochs=200, num_runs=50, metric='second', eps=0.1, verbose=True)
+### choose lr=0.08, momentum=0.65 for AGD
+
