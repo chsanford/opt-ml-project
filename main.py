@@ -6,9 +6,11 @@ from ml_testing.mf_testing import MatrixFactorizationTest
 from simple_testing.quadratic_function import Quadratic
 from simple_testing.simple_testing import run
 
-# A simple test of vanilla gradient descent on f(x) = x_1^2 + x_2^2 for a random initialization
-# gd_function_optimizer = GradientDescent(False, learning_rate=0.1)
-# run(Quadratic(), 100, gd_function_optimizer, 0.1, True)
+
+"""
+Top-level script that runs the ML experiments in the report.
+Training logs are saved locally.
+"""
 
 mnist_ffnn_test = MnistTest(ff=True)
 mnist_cnn_test = MnistTest(ff=False)

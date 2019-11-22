@@ -12,19 +12,28 @@ import torchvision
 import matplotlib.pyplot as plt
 
 
+"""
+Trains and tests a torch Module using the provided Optimizer and DataLoaders.
+"""
+
 class MLTest():
     log_interval = 10000
+
 
     def __init__(self):
         random_seed = 1
         torch.backends.cudnn.enabled = False
         torch.manual_seed(random_seed)
 
-    def run(self, n_epochs, optimizer, train_loader, test_loader, network, loss, sgd, save_model=False, log=False):
+
+    # Entry point into training a module, called from main.
+    def run(self, n_epochs, model, optimizer,
+            train_loader, test_loader, loss, sgd,
+            save_model=False, log=False):
         self.optimizer = optimizer
         self.train_loader = train_loader
         self.test_loader = test_loader
-        self.network = network
+        self.network = model
         self.loss = loss
         self.sgd = sgd
         self.train_losses = []
@@ -33,13 +42,15 @@ class MLTest():
         self.test_counter = [i * len(self.train_loader.dataset) for i in range(n_epochs + 1)]
         idt = lambda x: x
         idt.__name__ = ''
-        self.loss_metric = math.sqrt if self.loss == F.mse_loss else idt  # report RMSE if doing matrix factorization
+        # report rmse if doing matrix factorization
+        self.loss_metric = math.sqrt if self.loss == F.mse_loss else idt
 
-        print(f'Model: {type(self.network).__name__}\nParams:{self.optimizer.get_params()}\n')
+        print(f'Model: {type(self.model).__name__}\nParams:{self.optimizer.get_params()}\n')
 
         start = time.time()
         self.epoch_start = start
         self.test()
+
         print(f'Training for {n_epochs} epochs! sgd? {sgd} / logging? {log}')
 
         for epoch in range(1, n_epochs + 1):
@@ -63,6 +74,7 @@ class MLTest():
         plt.show()
 
 
+    # Saves the model/optimizer info and the training/test losses to a pickle for later plots.
     def _log_training(self):
         fname = f'./log/train-{datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")}'
 
@@ -71,7 +83,7 @@ class MLTest():
 
         with open(fname, 'wb') as logfile:
             print(f'Saving training log to {fname}')
-            d = {'name': type(self.network).__name__,
+            d = {'name': type(self.model).__name__,
                  'loss': f'{self.loss_metric.__name__} {self.loss.__name__}',
                  'params': self.optimizer.get_params(),
                  'train_losses': self.train_losses,
@@ -79,19 +91,21 @@ class MLTest():
             pickle.dump(d, logfile)
 
 
+    # Implement in subclass if needed.
     def _save_model(self):
-        raise NotImplementedError()  # implement in subclass
+        raise NotImplementedError()
 
 
+    # Backprops gradients for one epoch and prints the training loss.
     def train(self, epoch):
         total_loss = 0
         n_train = len(self.train_loader.dataset)
-        self.network.train()
+        self.model.train()
 
         for batch_idx, (data, target) in enumerate(self.train_loader):
             def closure():
                 self.optimizer.zero_grad()
-                output = self.network(data)
+                output = self.model(data)
                 loss = self.loss(output, target)
                 loss.backward()
                 return loss
@@ -115,14 +129,15 @@ class MLTest():
                 total_loss = 0
 
 
+    # Calculates the score (e.g. accuracy or rmse) and prints the test loss.
     def test(self):
-        self.network.eval()
+        self.model.eval()
         test_loss = 0
         correct = 0
 
         with torch.no_grad():
             for data, target in self.test_loader:
-                output = self.network(data)
+                output = self.model(data)
                 test_loss += self.loss(output, target, reduction='sum').item()
                 if self.loss == F.nll_loss:
                     pred = output.data.max(1, keepdim=True)[1]

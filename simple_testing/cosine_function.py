@@ -2,7 +2,9 @@ import math
 import numpy as np
 
 
-# f(x) = cos(x1) + cos(x2) + ... + cos(xd)
+"""
+f(x) = cos(x1) + cos(x2) + ... + cos(xd)
+"""
 class Cosine:
     def __init__(self, dim=2):
         self.dim = dim

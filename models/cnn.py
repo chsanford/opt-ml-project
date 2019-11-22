@@ -3,7 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-# Use the pytorch example: https://github.com/pytorch/examples/blob/master/mnist/main.py
+"""
+Convolutional Neural Network.
+Uses the pytorch example: https://github.com/pytorch/examples/blob/master/mnist/main.py
+"""
 class CNN(nn.Module):
     def __init__(self, log_prob=True):
         super(CNN, self).__init__()

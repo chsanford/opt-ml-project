@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+"""
+Feed Forward Neural Network.
+"""
 class FFNN(nn.Module):
     def __init__(self, log_prob=True):
         super(FFNN, self).__init__()

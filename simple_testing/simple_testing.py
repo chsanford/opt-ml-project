@@ -2,7 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-# Returns a tuple: (# steps to first-order stationary point, # steps to second-order stationary point)
+"""
+Entry point into optimizing a function, called from simple_functions_test.
+Returns a tuple: (# steps to first-order stationary point, # steps to second-order stationary point)
+"""
 def run(f, optimizer, epsilon=0.1, epochs=100, verbosity=1, create_plot=True):
     if verbosity >= 2:
         print(f.as_string() + "\n")
@@ -67,8 +70,6 @@ def run_trials(f, optimizer, trials=1000, epsilon=0.1, epochs=200, verbosity=0):
     plt.xlabel('epochs to convergence')
     plt.ylabel('number of trials')
     plt.show()
-
-
 
 
 def plot_results(epochs, f_x_vector):

@@ -9,8 +9,14 @@ from simple_testing.cosine_function import Cosine
 from simple_testing.octopus_function import Octopus 
 
 
+"""
+Top-level script that runs a grid search on the non-ML functions, printing the results to console.
+The parameter ranges we tested are at the bottom.
+"""
 
-# linear is straightforward; if log10, then min and max will be chosen to be the closest exp. of 10 (e.g. [0.0005, 2] -> [0.001, 0.01, 0.1, 1])
+# Generates the parameter ranges.
+# Linear is straightforward; if log10, then min and max will be chosen to be the closest exp. of 10
+# (e.g. [0.0005, 2] -> [0.001, 0.01, 0.1, 1])
 def interpolate(min, max, num_imdt_values):
     assert min < max
     if num_imdt_values is not None:  # linear search
@@ -23,10 +29,12 @@ def interpolate(min, max, num_imdt_values):
         return [10 ** i for i in range(min_exp, max_exp + 1)]
 
 
+# Runs the grid search.
 # function: function to be minimized
 # fixed_params is a dict of scalars, search_params is a dict ((min, max), num_imdt_values)
 # set num_imdt_values >= 0 for linear search, None for log10 search
-def grid_search(function, fixed_params=dict(), search_params=dict(), max_epochs=200, num_runs=10, metric='loss', eps=0.1, verbose=True):
+def grid_search(function, fixed_params=dict(), search_params=dict(),
+                max_epochs=200, num_runs=10, metric='loss', eps=0.1, verbose=True):
     searchs = dict()
     fixed_params.update({'noise_eps':eps})
     for p, t in search_params.items():
@@ -95,7 +103,7 @@ def grid_search(function, fixed_params=dict(), search_params=dict(), max_epochs=
     return best_param
 
 
-# Wrapper allows for sequential searches over the parameters
+# Wrapper allows for sequential searches over the parameters.
 # max_epochs: max number of steps by the optimizer
 # num_runs: number of runs to average over
 # metric: optimize over which metric, should be 'loss' or 'first' or 'second'
@@ -113,12 +121,6 @@ def run(function, searches, fixed_params=dict(), max_epochs=20, num_runs=3, metr
     print(f'\nAll done, final parameters: {fixed_params}')
 
 
-seq_searches = [{'lr': [(0.01, 0.1), 0]},
-                {'momentum': [(0.01, 0.1), 0]}]
-
-sim_searches = [{'lr': [(0.1, 0.5), 3],
-                 'momentum': [(0.1, 0.5), 3]}]
-
 fixed_1 = {'noise_r': 0, 'momentum': 0, 'NCE': False, 'noise_eps': 0.1}
 searches_1_1 = [{'lr': [(0.0001, 10), None]}]
 searches_1_2 = [{'lr': [(0.04, 0.5), 22]}]
@@ -129,6 +131,7 @@ searches_2_2 = [{'lr': [(0.04, 0.5), 22], 'momentum': [(0.1,0.9), 7]}]
 searches_2_3 = [{'lr': [(0.06, 0.14), 7], 'momentum': [(0.5, 0.7), 3]}]
 fixed_3 = {'lr': 0.08, 'momentum':0.65, 'NCE': False, 'noise_eps': 0.1}
 searches_3_1 = []
+
 #1_1
 #run(Octopus(), searches_1_1, fixed_params=fixed_1, max_epochs=500, num_runs=10, metric='second', eps=0.1, verbose=True)
 #1_2
@@ -143,4 +146,3 @@ searches_3_1 = []
 #2_3
 #run(Octopus(), searches_2_3, fixed_params=fixed_2, max_epochs=200, num_runs=50, metric='second', eps=0.1, verbose=True)
 ### choose lr=0.08, momentum=0.65 for AGD
-

@@ -1,24 +1,27 @@
-# Custom descent modeled on:
-# 	- https://github.com/pytorch/pytorch/blob/master/torch/optim/sgd.py
-# 	- https://discuss.pytorch.org/t/simulated-annealing-custom-optimizer/38609
 import torch
 from torch.optim.optimizer import Optimizer, required
 import numpy as np
 from collections import defaultdict
 
 
-# Defines gradient descent optimizer with options: noise, AGD(Nesterov momentum), or NCE(negative curvature exploitation)
-class GradientDescent(Optimizer):
-    param_names = ['lr', 'noise_r', 'noise_T', 'noise_eps', 'momentum', 'NCE', 'NCE_s', 'NCE_gamma']
+"""
+Defines gradient descent optimizer with options: noise, AGD (Nesterov momentum), or NCE (negative curvature exploitation).
+Custom descent modeled on:
+- https://github.com/pytorch/pytorch/blob/master/torch/optim/sgd.py
+- https://discuss.pytorch.org/t/simulated-annealing-custom-optimizer/38609
+"""
 
-    # correspondence with parameters in the paper is as follows:
+class GradientDescent(Optimizer):
+    """
+    Correspondence with parameters in the paper is as follows:
     # lr: eta, noise_r: r, noise_T: L, noise_eps: epsilon
     # momentum: 1-theta, NCE_s: s, NCE_gamma: gamma (gamma should be theta^2/eta)
-    def __init__(self, neural_net_params, is_ml=True, lr=0.1, noise_r=0, noise_T=-1, noise_eps=0,
-                 momentum=0, NCE=False, NCE_s=0, NCE_gamma=0, is_verbose=False, weight_decay=0):
+    """
+    def __init__(self, model_params, is_ml=True, lr=0.1, noise_r=0, noise_T=-1, noise_eps=0,
+                 momentum=0, NCE=False, NCE_s=0, NCE_gamma=0, is_verbose=False):
         self.is_ml = is_ml
         if is_ml:
-            Optimizer.__init__(self, neural_net_params, dict())
+            Optimizer.__init__(self, model_params, dict())
         else:
             self.state = defaultdict(dict)
         self.lr = lr
@@ -29,10 +32,10 @@ class GradientDescent(Optimizer):
         self.NCE = NCE
         self.NCE_s = NCE_s
         self.NCE_gamma = pow((1-momentum), 2) / lr
-        self.weight_decay = weight_decay
         self.is_verbose = is_verbose
 
 
+    # Returns a dictionary of optimizer parameter values.
     def get_params(self):
         params = ['lr', 'momentum', 'noise_T', 'noise_eps', 'noise_r', 'NCE', 'NCE_s', 'NCE_gamma']
         d = dict()
@@ -41,6 +44,7 @@ class GradientDescent(Optimizer):
         return d
 
 
+    # Corresponds to the step in a torch.optim optimizer, updating the model parameters.
     def step(self, closure=None):
         assert self.is_ml
         # NCE is only defined for AGD
@@ -58,8 +62,6 @@ class GradientDescent(Optimizer):
             for p in group['params']:
                 if p.grad is None:
                     continue
-                if self.weight_decay > 0:
-                    p.grad.data.add_(self.weight_decay, p.data)
                 params.append(p)
 
         # noise
@@ -77,7 +79,6 @@ class GradientDescent(Optimizer):
                 gauss = torch.randn(all_grad.size())
                 normed_gauss = gauss.div(torch.norm(gauss, p=2))
                 noise = normed_gauss.mul(radius)
-                print('adding noise')
                 if self.is_verbose:
                     print("add noise with l2 norm:", radius)
                 i = 0
@@ -135,7 +136,6 @@ class GradientDescent(Optimizer):
                     f_xt, f_yt, g_yt.dot((xt - yt)).item(), torch.norm((xt - yt), p=2).pow(2).item(), norm_vt.item()))
             if norm_vt > 0 and f_xt <= f_yt + g_yt.dot((xt - yt)) - self.NCE_gamma / 2 * (
             torch.norm((xt - yt), p=2).pow(2)):
-                print('running nce')
                 for p in params:
                     self.state[p]['momentum_buffer'] = torch.zeros(p.size())
                 if norm_vt >= self.NCE_s:
@@ -161,6 +161,8 @@ class GradientDescent(Optimizer):
                     print("no change by NCE")
         return loss
 
+
+    # Given a function f from simple_testing, directly returns the new x from taking a step.
     def step_not_ml(self, f, x):
         assert not self.is_ml
         # NCE is only defined for AGD
