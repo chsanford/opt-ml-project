@@ -50,11 +50,11 @@ mf_gd_optim = GradientDescent(
     NCE=False
 )
 
-# mnist_ffnn_test.run(1, torch.optim.Adam(mnist_ffnn_test.network.parameters()), sgd=True)
+#mnist_ffnn_test.run(1, torch.optim.Adam(mnist_ffnn_test.network.parameters()), sgd=True)
 # mnist_cnn_test.run(1, torch.optim.Adam(mnist_cnn_test.network.parameters()), sgd=True)
 
 #mnist_ffnn_test.run(20, gd_ffnn_optimizer, sgd=False)
 #mnist_cnn_test.run(1, gd_cnn_optimizer, sgd=False)
 
-mf_test.run(2, torch.optim.SGD(mf_test.model.parameters(), lr=0.01), sgd=True, save_model=True)
-#mf_test.run(500, mf_gd_optim, sgd=False)
+#mf_test.run(1, torch.optim.SGD(mf_test.model.parameters(), lr=0.01), sgd=True, save_model=False, log=True)
+mf_test.run(1, mf_gd_optim, sgd=False, save_model=False, log=True)

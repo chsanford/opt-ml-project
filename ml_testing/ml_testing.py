@@ -1,5 +1,8 @@
 # Followed this tutorial: https://nextjournal.com/gkoehler/pytorch-mnist
+import datetime
 import time
+import os
+import pickle
 import math
 import torch
 import torch.nn as nn
@@ -17,7 +20,7 @@ class MLTest():
         torch.backends.cudnn.enabled = False
         torch.manual_seed(random_seed)
 
-    def run(self, n_epochs, optimizer, train_loader, test_loader, network, loss, sgd, save_model=False):
+    def run(self, n_epochs, optimizer, train_loader, test_loader, network, loss, sgd, save_model=False, log=False):
         self.optimizer = optimizer
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -32,10 +35,12 @@ class MLTest():
         idt.__name__ = ''
         self.loss_metric = math.sqrt if self.loss == F.mse_loss else idt  # report RMSE if doing matrix factorization
 
+        print(f'Model: {type(self.network).__name__}\nParams:{self.optimizer.get_params()}\n')
+
         start = time.time()
         self.epoch_start = start
         self.test()
-        print(f'Training for {n_epochs} epochs! are we doing sgd? {sgd}')
+        print(f'Training for {n_epochs} epochs! sgd? {sgd} / logging? {log}')
 
         for epoch in range(1, n_epochs + 1):
             self.epoch_start = time.time()
@@ -45,6 +50,9 @@ class MLTest():
         if save_model:
             self._save_model()
 
+        if log:
+            self._log_training()
+
         print(f'Training took {time.time() - start} seconds.')
         fig = plt.figure()
         plt.plot(self.train_counter, self.train_losses, color='blue')
@@ -53,6 +61,22 @@ class MLTest():
         plt.xlabel('number of training examples seen')
         plt.ylabel('loss')
         plt.show()
+
+
+    def _log_training(self):
+        fname = f'./log/train-{datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")}'
+
+        if not os.path.exists('./log'):
+            os.makedirs('./log')
+
+        with open(fname, 'wb') as logfile:
+            print(f'Saving training log to {fname}')
+            d = {'name': type(self.network).__name__,
+                 'loss': f'{self.loss_metric.__name__} {self.loss.__name__}',
+                 'params': self.optimizer.get_params(),
+                 'train_losses': self.train_losses,
+                 'test_losses': self.test_losses}
+            pickle.dump(d, logfile)
 
 
     def _save_model(self):
@@ -113,7 +137,7 @@ class MLTest():
                 test_loss,
                 correct,
                 len(self.test_loader.dataset),
-                100. * correct / len(self.test_loader.dataset)),
-                time.time() - self.epoch_start)
+                100. * correct / len(self.test_loader.dataset),
+                time.time() - self.epoch_start))
         else:
             print(f'Test set: {self.loss_metric.__name__} {self.loss.__name__}: {test_loss:.4f}, dur: {time.time() - self.epoch_start:.2f}\n')

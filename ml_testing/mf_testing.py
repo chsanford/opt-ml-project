@@ -25,7 +25,7 @@ class MatrixFactorizationTest(MLTest):
             self.model.load_state_dict(state_dict, strict=True)
 
 
-    def run(self, n_epochs, optimizer, sgd=False, save_model=False):
+    def run(self, n_epochs, optimizer, sgd=False, save_model=False, log=False):
         super().run(n_epochs,
                     optimizer,
                     self.get_train_loader(sgd),
@@ -33,7 +33,8 @@ class MatrixFactorizationTest(MLTest):
                     self.model,
                     MatrixFactorizationTest.loss,
                     sgd,
-                    save_model=save_model)
+                    save_model=save_model,
+                    log=log)
 
 
     def get_train_loader(self, sgd=False):

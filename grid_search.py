@@ -181,9 +181,7 @@ def interpolate(min, max, num_imdt_values):
 def grid_search(module_, X, y, cv=2, dims=None,
                 fixed_params=dict(), search_params=dict(), max_epochs=20, sgd=False, verbose=True,
                 initial_state=None):
-    #optimizer = torch.optim.SGD if sgd else GradientDescent
-    optimizer = GradientDescent
-    #optimizer = torch.optim.SGD
+    optimizer = torch.optim.SGD if sgd else GradientDescent
     params = dict()
 
     for p, t in search_params.items():
@@ -242,20 +240,29 @@ seq_searches = [{'lr': [(0.001, 10), None]},
 sim_searches = [{'lr': [(0.01, 100), None],
                  'momentum': [(0.01, 0.1), 0]}]
 
-mf_gd = [{'lr': [(10, 60), 4]}]
-mf_gd2 = [{'lr': [(42, 58), 3]}]
+mf_gd = [{'lr': [(10, 60), 1]}]
+mf_gd2 = [{'lr': [(30, 38), 3]}]
 mf_agd = [{'lr': [(10, 50), 3],
            'momentum': [(0.1, 0.9), 1]}]
-mf_gd_noise = [{'noise_r': [(0.1, 1), 1],
+mf_agd2 = [{'lr': [(16, 22), 2],
+           'momentum': [(0.9, 0.95), 0]}]
+mf_noise = [{'noise_r': [(0.1, 10), None],
                 'noise_eps': [(0.1, 10), None],
                 'noise_T': [(1, 15), 2]}]
+mf_noise2 = [{'noise_r': [(0.025, 0.1), 2],
+                 'noise_eps': [(0.1, 1), 0]}]
+mf_nce = [{'NCE_gamma': [(0.01, 100), None],
+           'NCE_s': [(0.01, 100), None]}]
+mf_test = [{'NCE_s': [(1, 10), None]}]
 
 max_epochs = 200
 cv = 8
 state_dict = torch.load(MatrixFactorizationTest.path)
 
 run(MatrixFactorization, ml_dataset,
-    [{'momentum': [(0.1, 0.15), 0]}],
-    fixed_params={'weight_decay': 0.001, 'lr': 30},
+    mf_nce,
+    fixed_params={'lr': 22, 'momentum': 0.95,
+                  'noise_T': 1, 'noise_r': 0.1, 'noise_eps': 0.1,
+                  'NCE': True, 'NCE_gamma': 0},
     initial_state=state_dict,
     max_epochs=max_epochs, cv=cv, verbose=True)

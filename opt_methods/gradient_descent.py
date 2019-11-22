@@ -14,8 +14,8 @@ class GradientDescent(Optimizer):
     # correspondence with parameters in the paper is as follows:
     # lr: eta, noise_r: r, noise_T: L, noise_eps: epsilon
     # momentum: 1-theta, NCE_s: s, NCE_gamma: gamma (gamma should be theta^2/eta)
-    def __init__(self, neural_net_params, is_ml=True, lr=0.1, noise_r=0.1, noise_T=10, noise_eps=0.1,
-                 momentum=0, NCE=False, NCE_s=0.1, NCE_gamma=2.5, is_verbose=False):
+    def __init__(self, neural_net_params, is_ml=True, lr=0.1, noise_r=0, noise_T=-1, noise_eps=0,
+                 momentum=0, NCE=False, NCE_s=0, NCE_gamma=0, is_verbose=False, weight_decay=0):
         self.is_ml = is_ml
         if is_ml:
             Optimizer.__init__(self, neural_net_params, dict())
@@ -29,20 +29,19 @@ class GradientDescent(Optimizer):
         self.NCE = NCE
         self.NCE_s = NCE_s
         self.NCE_gamma = pow((1-momentum), 2) / lr
+        self.weight_decay = weight_decay
         self.is_verbose = is_verbose
 
 
-    # need this for skorch to work
-    def _check_params(self):
-        if self.is_ml:
-            group = self.param_groups[0]
-            for param_name in self.param_names:
-                if param_name in group:
-                    setattr(self, param_name, group[param_name])
+    def get_params(self):
+        params = ['lr', 'momentum', 'noise_T', 'noise_eps', 'noise_r', 'NCE', 'NCE_s', 'NCE_gamma']
+        d = dict()
+        for p in params:
+            d[p] = self.__getattribute__(p)
+        return d
 
 
     def step(self, closure=None):
-        self._check_params()
         assert self.is_ml
         # NCE is only defined for AGD
         if self.NCE:
@@ -59,6 +58,8 @@ class GradientDescent(Optimizer):
             for p in group['params']:
                 if p.grad is None:
                     continue
+                if self.weight_decay > 0:
+                    p.grad.data.add_(self.weight_decay, p.data)
                 params.append(p)
 
         # noise
@@ -76,6 +77,7 @@ class GradientDescent(Optimizer):
                 gauss = torch.randn(all_grad.size())
                 normed_gauss = gauss.div(torch.norm(gauss, p=2))
                 noise = normed_gauss.mul(radius)
+                print('adding noise')
                 if self.is_verbose:
                     print("add noise with l2 norm:", radius)
                 i = 0
@@ -133,6 +135,7 @@ class GradientDescent(Optimizer):
                     f_xt, f_yt, g_yt.dot((xt - yt)).item(), torch.norm((xt - yt), p=2).pow(2).item(), norm_vt.item()))
             if norm_vt > 0 and f_xt <= f_yt + g_yt.dot((xt - yt)) - self.NCE_gamma / 2 * (
             torch.norm((xt - yt), p=2).pow(2)):
+                print('running nce')
                 for p in params:
                     self.state[p]['momentum_buffer'] = torch.zeros(p.size())
                 if norm_vt >= self.NCE_s:
@@ -159,7 +162,6 @@ class GradientDescent(Optimizer):
         return loss
 
     def step_not_ml(self, f, x):
-        self._check_params()
         assert not self.is_ml
         # NCE is only defined for AGD
         if self.NCE:

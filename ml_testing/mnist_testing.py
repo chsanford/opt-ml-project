@@ -18,7 +18,7 @@ class MnistTest(MLTest):
         MLTest.__init__(self)
         self.network = FFNN() if ff else CNN()
 
-    def run(self, n_epochs, optimizer, sgd=False):
+    def run(self, n_epochs, optimizer, sgd=False, log=False):
         if self.view_example_images:
             self.visualize_data()
         super().run(n_epochs,
@@ -27,7 +27,8 @@ class MnistTest(MLTest):
                     self.get_test_loader(),
                     self.network,
                     MnistTest.loss,
-                    sgd)
+                    sgd,
+                    log=log)
 
     # Loads training data
     def get_train_loader(self, sgd=False):
