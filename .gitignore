@@ -1,6 +1,8 @@
 data/*
 results/*
+log/*
 .idea
+.ipynb_checkpoints
 __pycache__
 *.pyc
 *.swp

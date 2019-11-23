@@ -1,7 +1,9 @@
 import numpy as np
 
 
-# f(x) = x1^2 + x2^2 + ... + xd^2
+"""
+f(x) = x1^2 + x2^2 + ... + xd^2
+"""
 class Quadratic:
     def __init__(self, dim=2):
         self.dim = dim

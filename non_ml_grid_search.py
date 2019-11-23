@@ -9,8 +9,14 @@ from simple_testing.cosine_function import Cosine
 from simple_testing.octopus_function import Octopus 
 
 
+"""
+Top-level script that runs a grid search on the non-ML functions, printing the results to console.
+The parameter ranges we tested are at the bottom.
+"""
 
-# linear is straightforward; if log10, then min and max will be chosen to be the closest exp. of 10 (e.g. [0.0005, 2] -> [0.001, 0.01, 0.1, 1])
+# Generates the parameter ranges.
+# Linear is straightforward; if log10, then min and max will be chosen to be the closest exp. of 10
+# (e.g. [0.0005, 2] -> [0.001, 0.01, 0.1, 1])
 def interpolate(min, max, num_imdt_values):
     assert min < max
     if num_imdt_values is not None:  # linear search
@@ -23,10 +29,12 @@ def interpolate(min, max, num_imdt_values):
         return [10 ** i for i in range(min_exp, max_exp + 1)]
 
 
+# Runs the grid search.
 # function: function to be minimized
 # fixed_params is a dict of scalars, search_params is a dict ((min, max), num_imdt_values)
 # set num_imdt_values >= 0 for linear search, None for log10 search
-def grid_search(function, fixed_params=dict(), search_params=dict(), max_epochs=200, num_runs=10, metric='loss', eps=0.1, verbose=True):
+def grid_search(function, fixed_params=dict(), search_params=dict(),
+                max_epochs=200, num_runs=10, metric='loss', eps=0.1, verbose=True):
     searchs = dict()
     fixed_params.update({'noise_eps':eps})
     for p, t in search_params.items():
@@ -96,7 +104,7 @@ def grid_search(function, fixed_params=dict(), search_params=dict(), max_epochs=
     return best_param
 
 
-# Wrapper allows for sequential searches over the parameters
+# Wrapper allows for sequential searches over the parameters.
 # max_epochs: max number of steps by the optimizer
 # num_runs: number of runs to average over
 # metric: optimize over which metric, should be 'loss' or 'first' or 'second'

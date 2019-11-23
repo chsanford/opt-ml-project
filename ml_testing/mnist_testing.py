@@ -10,26 +10,34 @@ from models.ffnn import FFNN
 from models.cnn import CNN
 
 
+"""
+Instance of MLTest that creates a Neural Network (FFNN or CNN) model.
+Loads the MNIST dataset from torchvision for testing.
+"""
+
 class MnistTest(MLTest):
     view_example_images = False
     loss = F.nll_loss
+
 
     def __init__(self, ff=True):
         MLTest.__init__(self)
         self.network = FFNN() if ff else CNN()
 
-    def run(self, n_epochs, optimizer, sgd=False):
+
+    def run(self, n_epochs, optimizer, sgd=False, log=False):
         if self.view_example_images:
             self.visualize_data()
         super().run(n_epochs,
+                    self.network,
                     optimizer,
                     self.get_train_loader(sgd),
                     self.get_test_loader(),
-                    self.network,
                     MnistTest.loss,
-                    sgd)
+                    sgd,
+                    log=log)
 
-    # Loads training data
+
     def get_train_loader(self, sgd=False):
         batch_size_train = 1 if sgd else 60000  # all samples
         train_loader = torch.utils.data.DataLoader(
@@ -47,7 +55,7 @@ class MnistTest(MLTest):
         )
         return train_loader
 
-    # Loads testing data
+
     def get_test_loader(self):
         batch_size_test = 1000
         test_loader = torch.utils.data.DataLoader(
@@ -64,7 +72,8 @@ class MnistTest(MLTest):
             shuffle=True)
         return test_loader
 
-    # Visualizes sample data
+
+    # Visualizes a sample of the test data.
     def visualize_data(self):
         examples = enumerate(test_loader)
         batch_idx, (example_data, example_targets) = next(examples)

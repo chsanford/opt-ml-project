@@ -5,7 +5,11 @@ import pickle
 #import matplotlib.pyplot as plt
 
 
-# Returns a tuple: (# steps to first-order stationary point, # steps to second-order stationary point)
+# Returns a list: (# steps to first-order stationary point, # steps to second-order stationary point, list of losses)
+"""
+Entry point into optimizing a function, called from simple_functions_test.
+Returns a tuple: (# steps to first-order stationary point, # steps to second-order stationary point)
+"""
 def run(f, optimizer, epsilon=0.1, epochs=100, verbosity=1):
     if verbosity >= 2:
         print(f.as_string() + "\n")

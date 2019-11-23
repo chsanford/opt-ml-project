@@ -4,7 +4,10 @@ import torch
 import torchvision
 
 
-# Modeled after MNIST dataset: https://pytorch.org/docs/stable/_modules/torchvision/datasets/mnist.html
+"""
+Modeled after MNIST dataset: https://pytorch.org/docs/stable/_modules/torchvision/datasets/mnist.html
+Downloads and pre-processes the data into train/test tensors.
+"""
 class MovieLensDataset(torch.utils.data.Dataset):
     url = 'http://files.grouplens.org/datasets/movielens/ml-latest-small.zip'
     training_file = 'train.pt'
@@ -33,16 +36,21 @@ class MovieLensDataset(torch.utils.data.Dataset):
         t = torch.load(os.path.join(self.data_dir, self.processed_folder, data_file))
         self.data, self.targets = t[:, :-1], t[:, -1].float()  # data = (userId, movieId), targets = rating
 
+
     def __len__(self):
         return len(self.data)
 
+
     def __getitem__(self, index):
         return self.data[index], self.targets[index]
+
 
     def _check_exists(self):
         return (os.path.exists(os.path.join(self.data_dir, self.processed_folder, self.training_file)) and
                 os.path.exists(os.path.join(self.data_dir, self.processed_folder, self.training_file)))
 
+
+    # Returns the dimensions of the matrix from the data to factorize.
     def get_dims(self):
         if self._n_users is None:
             dim = torch.load(os.path.join(self.data_dir, self.processed_folder, self.dim_file))
@@ -69,6 +77,7 @@ class MovieLensDataset(torch.utils.data.Dataset):
             torch.save(torch.tensor(test_df.to_numpy(dtype=int)), f)
         with open(os.path.join(self.data_dir, self.processed_folder, self.dim_file), 'wb') as f:
             torch.save(torch.tensor([self._n_users, self._n_movies]), f)
+
 
     def download(self):
         if not os.path.exists(os.path.join(self.data_dir, self.processed_folder)):

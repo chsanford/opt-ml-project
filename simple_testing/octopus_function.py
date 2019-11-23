@@ -2,7 +2,9 @@ import numpy as np
 import math
 
 
-# 2-D octopus function from https://arxiv.org/pdf/1705.10412.pdf for restricted domain
+"""
+2-D octopus function from https://arxiv.org/pdf/1705.10412.pdf for restricted domain
+"""
 class Octopus:
     def __init__(self):
         self.gamma = 1
