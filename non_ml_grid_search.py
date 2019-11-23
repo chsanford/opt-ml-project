@@ -59,6 +59,7 @@ def grid_search(function, fixed_params=dict(), search_params=dict(), max_epochs=
             for step in range(max_epochs):
                 try:
                     x = optimizer.step_not_ml(function, x)
+                    print(f'{step+1:>12}{function.eval(x):>12.4f}')
                     if first == max_epochs and is_first_order_stationary_point(function, x, eps):
                         first = step + 1
                     if second == max_epochs and is_second_order_stationary_point(function, x, eps):
@@ -67,8 +68,8 @@ def grid_search(function, fixed_params=dict(), search_params=dict(), max_epochs=
                     x = function.random_init()
                     first = second = max_epochs
                     break
-                if verbose:
-                    print(f'{step+1:>12}{function.eval(x):>12.4f}')
+            #if verbose:
+            #    print(f'{function.eval(x):>12.4f}')
             loss.append(function.eval(x)) 
             firsts.append(first)
             seconds.append(second)
@@ -119,28 +120,74 @@ seq_searches = [{'lr': [(0.01, 0.1), 0]},
 sim_searches = [{'lr': [(0.1, 0.5), 3],
                  'momentum': [(0.1, 0.5), 3]}]
 
-fixed_1 = {'noise_r': 0, 'momentum': 0, 'NCE': False, 'noise_eps': 0.1}
-searches_1_1 = [{'lr': [(0.0001, 10), None]}]
-searches_1_2 = [{'lr': [(0.04, 0.5), 22]}]
-searches_1_3 = [{'lr': [(0.1, 0.14), 3]}]
-fixed_2 = {'noise_r': 0, 'NCE': False, 'noise_eps': 0.1}
-searches_2_1 = [{'lr': [(0.0001, 10), None], 'momentum': [(0.1,0.9), 7]}]
-searches_2_2 = [{'lr': [(0.04, 0.5), 22], 'momentum': [(0.1,0.9), 7]}]
-searches_2_3 = [{'lr': [(0.06, 0.14), 7], 'momentum': [(0.5, 0.7), 3]}]
-fixed_3 = {'lr': 0.08, 'momentum':0.65, 'NCE': False, 'noise_eps': 0.1}
-searches_3_1 = []
-#1_1
-#run(Octopus(), searches_1_1, fixed_params=fixed_1, max_epochs=500, num_runs=10, metric='second', eps=0.1, verbose=True)
-#1_2
-#run(Octopus(), searches_1_2, fixed_params=fixed_1, max_epochs=200, num_runs=20, metric='second', eps=0.1, verbose=True)
-#1_3
-#run(Octopus(), searches_1_3, fixed_params=fixed_1, max_epochs=200, num_runs=50, metric='second', eps=0.1, verbose=True)
+# Octopus function
+oct_fixed_gd = {'noise_r': 0, 'momentum': 0, 'NCE': False, 'noise_eps': 0.1}
+oct_gd_1 = [{'lr': [(0.0001, 10), None]}]
+oct_gd_2 = [{'lr': [(0.04, 0.5), 22]}]
+oct_gd_3 = [{'lr': [(0.1, 0.14), 3]}]
 ### choose lr=0.13 for GD
-#2_1
-#run(Octopus(), searches_2_1, fixed_params=fixed_2, max_epochs=200, num_runs=10, metric='second', eps=0.1, verbose=True)
-#2_2
-#run(Octopus(), searches_2_2, fixed_params=fixed_2, max_epochs=200, num_runs=20, metric='second', eps=0.1, verbose=True)
-#2_3
-#run(Octopus(), searches_2_3, fixed_params=fixed_2, max_epochs=200, num_runs=50, metric='second', eps=0.1, verbose=True)
-### choose lr=0.08, momentum=0.65 for AGD
+oct_fixed_agd = {'noise_r': 0, 'NCE': False, 'noise_eps': 0.1}
+oct_agd_1 = [{'lr': [(0.0001, 10), None], 'momentum': [(0.1,0.9), 7]}]
+oct_agd_2 = [{'lr': [(0.02, 0.3), 13], 'momentum': [(0.1, 0.9), 7]}]
+oct_agd_3 = [{'lr': [(0.04, 0.12), 7], 'momentum': [(0.6, 0.8), 3]}]
+### choose lr=0.07, momentum=0.7 for AGD
+### first: 33.965 (+/-8.796), second: 37.500 (+/-9.347)
+oct_fixed_noise = {'lr': 0.07, 'momentum':0.7, 'NCE': False, 'noise_eps': 0.1}
+oct_noise_1 = [{'noise_r': [(0.02, 0.1), 3], 'noise_T': [(0, 100), 1]}] #200 runs, r=0.04, T=50
+oct_noise_2 = [{'noise_r': [(0.01, 0.05), 3], 'noise_T': [(10, 60), 4]}] #200 runs, r=0.04, T=60
+### choose r=0.04, T=60, not stable, should be fine for r=0.03~0.05
+### first: 34.275 (+/-7.597), second: 37.090 (+/-8.766)
+oct_fixed_NCE = {'lr': 0.07, 'momentum':0.7, 'NCE': True, 'noise_eps': 0.1, 'noise_r': 0}
+oct_NCE_1 = [{'NCE_s': [(0.0001, 10), None]}] # s=1
+oct_NCE_2 = [{'NCE_s': [(0.5, 4), 6]}] # s=3.5
+oct_NCE_3 = [{'NCE_s': [(3, 6), 5]}] # s=4
+oct_NCE_4 = [{'NCE_s': [(3, 5), 19]}] # s=4
+### choose s=4, robust for s=3.5~5
+### first: 22.470 (+/-3.528), second: 23.080 (+/-2.962)
+oct_fixed_all_1 = {'lr': 0.07, 'momentum':0.7, 'NCE': True, 'noise_eps': 0.1, 'noise_r': 0.04, 'noise_T': 60}
+oct_fixed_all_2 = {'lr': 0.07, 'momentum':0.7, 'NCE': True, 'noise_eps': 0.1, 'NCE_s': 4}
+oct_all_1 = [{'NCE_s': [(1, 6), 4]}] # s=4
+oct_all_2 = [{'noise_r': [(0.01, 0.05), 3], 'noise_T': [(10, 60), 4]}] #500 runs
+### choose s=4
+### first: 22.045 (+/-4.093), second: 22.565 (+/-3.484) 
+#run(Octopus(), oct_all_2, fixed_params=oct_fixed_all_2, max_epochs=200, num_runs=500, metric='second', eps=0.1, verbose=True)
 
+
+# Cosine function
+cos_fixed_gd = {'noise_r': 0, 'momentum': 0, 'NCE': False, 'noise_eps': 0.1}
+cos_gd_1 = [{'lr': [(0.0001, 10), None]}] #200 runs, best: lr=0.1
+cos_gd_2 = [{'lr': [(0.5, 5), 8]}] #200 runs, best: lr=1, robust in 0.5~1.5
+cos_gd_3 = [{'lr': [(0.5, 1.5), 9]}] #200 runs, best: lr=1.2, robust in 0.8~1.5
+### choose lr=1.2
+### first: 2.770 (+/-1.355), second: 2.855 (+/-1.508)
+cos_fixed_agd = {'noise_r': 0, 'NCE': False, 'noise_eps': 0.1}
+cos_agd_1 = [{'lr': [(0.5, 3), 4], 'momentum': [(0.1, 0.9), 7]}] #200 runs, best: lr=1, momentum=0.6
+cos_agd_2 = [{'lr': [(0.6, 1.4), 3], 'momentum': [(0.3, 0.9), 5]}] #200 runs, best: lr=1.2, momentum=0.8
+cos_agd_3 = [{'lr': [(1.1, 1.3), 1], 'momentum': [(0.6, 0.9), 2]}] #500 runs, best: lr=1.2, momentum=0.8
+### choose lr=1.2, momentum=0.8
+### first: 2.526 (+/-1.034), second: 2.586 (+/-1.104)
+cos_fixed_noise = {'lr': 1.2, 'momentum':0.8, 'NCE': False, 'noise_eps': 0.1}
+cos_noise_1 = [{'noise_r': [(0.01, 1), None], 'noise_T': [(0, 3), 2]}] #500 runs, r=0.1, T=0, second: 2.486 (+/-1.134)
+cos_noise_2 = [{'noise_r': [(0.05, 0.5), 8], 'noise_T': [(0, 1), 0]}] #500 runs, r=0.1, T=0, not stable
+### choose r=0.1, T=0
+### first: 2.416 (+/-1.069), second: 2.486 (+/-1.134)
+cos_fixed_NCE = {'lr': 1.2, 'momentum':0.8, 'NCE': True, 'noise_eps': 0.1, 'noise_r': 0}
+cos_NCE_1 = [{'NCE_s': [(0.001, 10), None]}] # 200 runs, s=10, second: 2.610 (+/-1.130), no improvement
+cos_NCE_2 = [{'NCE_s': [(2, 16), 6]}] # 200 runs, s=4, second: 2.425 (+/-0.935)
+cos_NCE_3 = [{'NCE_s': [(3, 5), 1]}] # 1000 runs, s=3, second: 2.406 (+/-0.894)
+### choose NCE_s=3
+### first: 2.390 (+/-0.882), second: 2.406 (+/-0.894)
+cos_fixed_all = {'lr': 1.2, 'momentum':0.8, 'NCE': True, 'noise_eps': 0.1, 'noise_r': 0.1, 'noise_T': 0}
+cos_all_1 = [{'NCE_s': [(1, 15), 6]}] # 500 runs, s=3, second: 2.478 (+/-0.943)
+cos_all_2 = [{'NCE_s': [(1, 5), 3]}] # 1000 runs, s=4, second: 2.421 (+/-1.001)
+### choose NCE_s=4
+### first: 2.392 (+/-0.960), second: 2.421 (+/-1.001)
+#run(Cosine(), cos_NCE_3, fixed_params=cos_fixed_NCE, max_epochs=10, num_runs=1000, metric='second', eps=0.1, verbose=True)
+
+#Quadratic function
+qua_fixed_gd = {'noise_r': 0, 'momentum': 0, 'NCE': False, 'noise_eps': 0.1}
+qua_gd_1 = [{'lr': [(0.0001, 10), None]}] #200 runs, best: lr=0.1
+qua_gd_2 = [{'lr': [(0.05, 0.3), 4]}] #200 runs, best: lr=0.3
+qua_gd_3 = [{'lr': [(0.3, 1.5), 5]}] #200 runs, best: lr=0.5
+qua_gd_4 = [{'lr': [(0.4, 0.6), 3]}] #500 runs, best: lr=0.5
+run(Quadratic(), qua_gd_4, fixed_params=qua_fixed_gd, max_epochs=10, num_runs=500, metric='second', eps=0.1, verbose=True)

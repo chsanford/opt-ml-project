@@ -1,14 +1,17 @@
 import numpy as np
-import matplotlib.pyplot as plt
+import datetime
+import os
+import pickle
+#import matplotlib.pyplot as plt
 
 
 # Returns a tuple: (# steps to first-order stationary point, # steps to second-order stationary point)
-def run(f, optimizer, epsilon=0.1, epochs=100, verbosity=1, create_plot=True):
+def run(f, optimizer, epsilon=0.1, epochs=100, verbosity=1):
     if verbosity >= 2:
         print(f.as_string() + "\n")
 
-    steps_to_fosp = None
-    steps_to_sosp = None
+    steps_to_fosp = epochs+1
+    steps_to_sosp = epochs+1
 
     x = f.random_init()
     f_x_vector = [f.eval(x)]
@@ -21,26 +24,26 @@ def run(f, optimizer, epsilon=0.1, epochs=100, verbosity=1, create_plot=True):
         if verbosity >= 2:
             print_epoch(e, f, x, epsilon)
 
-        if steps_to_fosp == None and is_first_order_stationary_point(f, x, epsilon):
+        if steps_to_fosp == epochs+1 and is_first_order_stationary_point(f, x, epsilon):
             steps_to_fosp = e
-        if steps_to_sosp == None and is_second_order_stationary_point(f, x, epsilon):
+        if steps_to_sosp == epochs+1 and is_second_order_stationary_point(f, x, epsilon):
             steps_to_sosp = e
 
     if verbosity >= 1:
-        if steps_to_fosp == None:
+        if steps_to_fosp == epochs+1:
             print("Did not converge to a " + str(epsilon) + "-first-order stationary-point.")
         else:
             print(
                 "Converged to a " + str(epsilon) + "-first-order stationary-point after " + str(steps_to_fosp) + " steps.")
-        if steps_to_sosp == None:
+        if steps_to_sosp == epochs+1:
             print("Did not converge to a " + str(epsilon) + "-second-order stationary-point.")
         else:
             print(
                 "Converged to a " + str(epsilon) + "-second-order stationary-point after " + str(steps_to_sosp) + " steps.")
 
-    if create_plot:
-        plot_results(epochs, f_x_vector)
-    return (steps_to_fosp, steps_to_sosp)
+    #if create_plot:
+    #    plot_results(epochs, f_x_vector)
+    return [steps_to_fosp, steps_to_sosp, f_x_vector]
 
 def run_trials(f, optimizer, trials=1000, epsilon=0.1, epochs=200, verbosity=0):
     if verbosity >= 0:
@@ -48,11 +51,30 @@ def run_trials(f, optimizer, trials=1000, epsilon=0.1, epochs=200, verbosity=0):
 
     list_steps_to_fosp = []
     list_steps_to_sosp = []
+    list_losses = []
     count_no_terminate = 0
     for i in range(trials):
-        (fosp, sosp) = run(f, optimizer, epsilon=epsilon, epochs=epochs, verbosity=verbosity, create_plot=False)
+        [fosp, sosp, losses] = run(f, optimizer, epsilon=epsilon, epochs=epochs, verbosity=verbosity, create_plot=False)
+        list_steps_to_fosp.append(fosp)
+        list_steps_to_sosp.append(sosp)
+        list_losses.append(losses)
         if verbosity >= 1:
             print("\nTrial " + str(i))
+    fname = f'./log/{f.get_name()}-{datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")}'
+    if not os.path.exists('./log'):
+        os.makedirs('./log')
+    with open(fname, 'wb') as logfile:
+        print(f'Saving training log to {fname}')
+        d = {'name': f.get_name(),
+             'trials': trials,
+             'epochs': epochs,
+             'params': self.optimizer.get_params(),
+             'fosp': list_steps_to_fosp,
+             'sosp': list_steps_to_sosp,
+             'losses': list_losses}
+        pickle.dump(d, logfile)
+
+        '''
         if (sosp == None):
             count_no_terminate += 1
         else:
@@ -67,8 +89,7 @@ def run_trials(f, optimizer, trials=1000, epsilon=0.1, epochs=200, verbosity=0):
     plt.xlabel('epochs to convergence')
     plt.ylabel('number of trials')
     plt.show()
-
-
+    '''
 
 
 def plot_results(epochs, f_x_vector):

@@ -45,7 +45,7 @@ def load_dataset(dataset):
 class GridSearchCV():
     scoring_options = ['accuracy', 'rmse']
 
-    def __init__(self, model_, optimizer_, params, cv=2, verbose=True, max_epochs=20, scoring='accuracy', sgd=False, module_params=dict(), initial_state=None, all_folds=False, train_score=True, data=-1):
+    def __init__(self, model_, optimizer_, params, cv=2, verbose=True, max_epochs=20, scoring='accuracy', sgd=False, module_params=dict(), initial_state=None, all_folds=False, train_score=True, data=-1, num_run=1):
         assert not sgd  # not supported right now
         self.model_ = model_
         self.optimizer_ = optimizer_
@@ -58,6 +58,7 @@ class GridSearchCV():
         self.all_folds = all_folds  # whether to perform CV or just use one split
         self.train_score = train_score  # whether to score based on train or valid loss
         self.data = data # how many data points to use
+        self.num_run = num_run
         if scoring not in GridSearchCV.scoring_options:
             raise Error(f'Unknown scoring {self.scoring}')
         self.scoring = scoring
@@ -83,36 +84,33 @@ class GridSearchCV():
             print_(f'[{i+1}/{n_configs}] {params}')
             scores = []
 
-            for train_idx, test_idx in kf.split(X):
-                if self.train_score:  # use all the data for training and scoring
-                    if self.data > 0:
-                        train_idx = range(self.data)
+            for i in range(self.num_run):
+                for train_idx, test_idx in kf.split(X):
+                    if self.train_score:  # use all the data for training and scoring
+                        if self.data > 0:
+                            train_idx = range(self.data)
+                        else:
+                            train_idx = range(len(X))
+                        test_idx = []
                     else:
-                        train_idx = range(len(X))
-                    test_idx = []
-                else:
-                    test_idx = self._check_mf(X, train_idx, test_idx)
+                        test_idx = self._check_mf(X, train_idx, test_idx)
 
-                model = self.model_(**self.module_params)
+                    model = self.model_(**self.module_params)
 
-                if self.initial_state is not None:
-                    model.load_state_dict(self.initial_state, strict=True)
+                    if self.initial_state is not None:
+                        model.load_state_dict(self.initial_state, strict=True)
 
-                if self.optimizer_ == GradientDescent:
-                    extra_params = {'is_ml': True}
-                else:
-                    extra_params = {'nesterov': True}
+                    if self.optimizer_ == GradientDescent:
+                        extra_params = {'is_ml': True}
+                    else:
+                        extra_params = {'nesterov': True}
 
-                optimizer = self.optimizer_(model.parameters(), **params, **extra_params)
-                scores.append(self._fit_and_score(model,
-                                                  X, y,
-                                                  optimizer,
-                                                  train_idx,
-                                                  test_idx))
+                    optimizer = self.optimizer_(model.parameters(), **params, **extra_params)
+                    score = self._fit_and_score(model, X, y, optimizer, train_idx, test_idx)
+                    scores.append(score)
 
-                if not self.all_folds or self.train_score:
-                    break
-
+                    if not self.all_folds or self.train_score:
+                        break
             self.cv_results_['params'].append(params)
             self.cv_results_['mean_test_score'].append(np.mean(scores))
             self.cv_results_['std_test_score'].append(np.std(scores))
@@ -159,7 +157,6 @@ class GridSearchCV():
 
             if self.verbose:
                 self._log(epoch, train_loss, valid_loss, time.time() - start)
-
         return score
 
     def _log(self, epoch, train_loss, valid_loss, dur):
@@ -188,7 +185,7 @@ def interpolate(min, max, num_imdt_values):
 # set num_imdt_values >= 0 for linear search, None for log10 search
 def grid_search(module_, X, y, cv=2, dims=None,
                 fixed_params=dict(), search_params=dict(), max_epochs=20, sgd=False, verbose=True,
-                initial_state=None, data=-1):
+                initial_state=None, data=-1, num_run=1):
     #optimizer = torch.optim.SGD if sgd else GradientDescent
     optimizer = GradientDescent
     #optimizer = torch.optim.SGD
@@ -209,7 +206,8 @@ def grid_search(module_, X, y, cv=2, dims=None,
 
     gs = GridSearchCV(module_, optimizer, params,
                       cv=cv, verbose=verbose, max_epochs=max_epochs,
-                      scoring=scoring, sgd=sgd, module_params=kwargs, initial_state=initial_state, data=data)
+                      scoring=scoring, sgd=sgd, module_params=kwargs, initial_state=initial_state,
+                      data=data, num_run=num_run)
     gs.fit(X, y)
 
     print_(f'Best parameters set found on development set:\n{gs.best_params_}')
@@ -224,8 +222,9 @@ def grid_search(module_, X, y, cv=2, dims=None,
 
 
 # Wrapper allows for sequential searches over the parameters
-def run(module_, dataset, searches, fixed_params=dict(), cv=2, max_epochs=20, verbose=True, initial_state=None, data=-1):
-    print_(f'{module_} with {type(dataset).__name__}, running searches {searches} with fixed params {fixed_params}\n')
+def run(module_, dataset, searches, fixed_params=dict(), cv=2, max_epochs=20, verbose=True, initial_state=None, data=-1, num_run=1):
+    print_(f'{module_} with {type(dataset).__name__}, running searches {searches} with fixed params {fixed_params}')
+    print_(f'Average over {num_run} runs.\n')
     if initial_state is not None:
         print_('Running with pre-trained parameters.')
 
@@ -238,7 +237,8 @@ def run(module_, dataset, searches, fixed_params=dict(), cv=2, max_epochs=20, ve
 
         params = grid_search(module_, X, y, cv=cv, dims=dims,
                              fixed_params=fixed_params, search_params=search_params,
-                             max_epochs=max_epochs, sgd=False, verbose=verbose, initial_state=initial_state, data=data)
+                             max_epochs=max_epochs, sgd=False, verbose=verbose, initial_state=initial_state,
+                             data=data, num_run=num_run)
         fixed_params.update(params)
 
     print_(f'\nAll done, final parameters: {fixed_params}')
@@ -283,15 +283,31 @@ fnn_agd1 = [{'lr': [(0.05, 0.4), 6], 'momentum': [(0.1, 0.9), 7]}] #best: lr=0.1
 fnn_agd2 = [{'lr': [(0.12, 0.3), 8], 'momentum': [(0.9, 0.95), 0]}] #best: lr=0.18, momentum=0.95, quite robust for lr=0.12~0.2 
 # [AGD] lr=0.18, momentum=0.95, loss~=0.24
 
-fnn_noise1 = [{'noise_r': [(0.001, 10), None], 'noise_T': [(0, 100), 1], 'noise_eps': [(0.001, 10), None]}]
-# [AGD+noise] noise_r=, noise_eps=, noise_T=
+fnn_noise1 = [{'noise_r': [(0.001, 10), None], 'noise_T': [(0, 100), 1], 'noise_eps': [(0.001, 10), None]}] #best: T=100, eps=1, r=0.01, but only runned for 1 time, so result not stable
+fnn_noise2 = [{'noise_r': [(0.01, 0.1), None], 'noise_T': [(0, 100), 1]}] #fix eps=0.1, best: T=100, r=0.1
+fnn_noise3 = [{'noise_r': [(0.05, 0.2), 2], 'noise_T': [(50, 100), 0]}] #fix eps=0.1, run 10 times, best: T=50, r=0.1
+# [AGD+noise] noise_r=0.1, noise_eps=0.1, noise_T=50, loss = 0.242244 (+/-0.005)
+
+fnn_NCE1 = [{'NCE_s': [(0.01, 10), None]}] #1 run, best: s=10, (0.1, 1 also get similar loss)
+fnn_NCE2 = [{'NCE_s': [(2, 8), 2]}] #5 runs, best: s=6, loss=0.240498 (+/-0.004)
+fnn_NCE3 = [{'NCE_s': [(5, 7), 1]}] #10 runs, best: s=7
+# [AGD+NCE] NCE_s=7, loss = 0.241532 (+/-0.005)
+
+fnn_all1 = [{'NCE_s': [(2, 8), 2]}] #5 runs, best: s=4, loss=0.241248 (+/-0.004)
+# [all] NCE_s=4, loss=0.241248 (+/-0.004)
+#run(FFNN, mnist_dataset, fnn_all1, fixed_params={'lr': 0.18, 'momentum': 0.95, 'noise_r': 0.1, 'noise_eps': 0.1, 'noise_T': 50}, max_epochs=max_epochs, verbose=True, num_run=5)
+
+
+
 
 #CNN
 cnn_gd1 = [{'lr': [(0.01, 10), None]}] #best: 0.1 
-cnn_gd2 = [{'lr': [(0.05, 0.3), 4]}] #best: 0.2
-cnn_gd3 = [{'lr': [(0.12, 0.26), 6]}] #best: 
-cnn_agd1 = [{'lr': [(0.05, 0.4), 6], 'momentum': [(0.3, 0.9), 1]}] #best:  
-
-#run(FFNN, mnist_dataset, fnn_noise1, fixed_params={'lr': 0.18, 'momentum': 0.95}, max_epochs=max_epochs, verbose=True)
-run(CNN, mnist_dataset, cnn_gd3, fixed_params={'momentum': 0,'noise_r': 0}, max_epochs=max_epochs, verbose=True, data=3000)
-run(CNN, mnist_dataset, cnn_agd1, fixed_params={'noise_r': 0}, max_epochs=max_epochs, verbose=True, data=3000)
+cnn_gd2 = [{'lr': [(0.05, 0.3), 4]}] #best: 0.2, loss=0.030520
+cnn_gd3 = [{'lr': [(0.12, 0.26), 6]}] #best: 0.26, loss=0.009335, but not stable
+cnn_agd1 = [{'lr': [(0.05, 0.4), 6], 'momentum': [(0.3, 0.9), 1]}] #best: lr=0.05, momentum=0.9, loss=0.016273
+cnn_agd2 = [{'lr': [(0.05, 0.25), 3], 'momentum': [(0.5, 0.9), 1]}] #best: 
+cnn_nce1 = [{'NCE_s': [(2,8), 2]}] #3 runs, best: s=6, loss=0.002380 (+/-0.001)
+cnn_noise1 = [{'noise_r': [(0.01, 1), None], 'noise_T': [(0, 100), 1]}] #2 runs, best: r=1, T=50
+#run(CNN, mnist_dataset, cnn_agd2, fixed_params={'noise_r': 0}, max_epochs=200, verbose=True, data=3000, num_run=3)
+run(CNN, mnist_dataset, cnn_nce1, fixed_params={'lr': 0.05, 'momentum': 0.9, 'noise_r': 0}, max_epochs=200, verbose=True, data=3000, num_run=3)
+run(CNN, mnist_dataset, cnn_noise1, fixed_params={'lr': 0.05, 'momentum': 0.9}, max_epochs=200, verbose=True, data=3000, num_run=2)
