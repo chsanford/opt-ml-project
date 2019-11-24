@@ -1,6 +1,7 @@
 import os
 import torch
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 
 from datasets.MovieLens import MovieLensDataset
 from ml_testing.ml_testing import MLTest
@@ -20,6 +21,7 @@ class MatrixFactorizationTest(MLTest):
     def __init__(self, load_model=False):
         super().__init__()
         self.train_dataset = MovieLensDataset(train=True)
+        self.data = next(iter(DataLoader(self.train_dataset, batch_size=len(self.train_dataset))))
         self.test_dataset = MovieLensDataset(train=False)
         n_users, n_movies = self.train_dataset.get_dims()
         self.model = MatrixFactorization(n_users, n_movies, self.r)
@@ -30,24 +32,27 @@ class MatrixFactorizationTest(MLTest):
             self.model.load_state_dict(state_dict, strict=True)
 
 
-    def run(self, n_epochs, optimizer, sgd=False, save_model=False, log=False):
-        super().run(n_epochs,
+    def run(self, n_epochs, optimizer, sgd=False, save_model=False, log=False, trials=1, tag=''):
+        return super().run(n_epochs,
                     self.model,
                     optimizer,
                     self.get_train_loader(sgd),
                     self.get_test_loader(),
                     MatrixFactorizationTest.loss,
-                    sgd,
+                    sgd, trials=trials, tag=tag,
                     save_model=save_model,
                     log=log)
 
 
     def get_train_loader(self, sgd=False):
+        return self.data
+        '''
         return torch.utils.data.DataLoader(
             self.train_dataset,
             batch_size=1 if sgd else len(self.train_dataset),
             shuffle=sgd
         )
+        '''
 
 
     def get_test_loader(self):

@@ -16,3 +16,6 @@ class FFNN(nn.Module):
         x = x.view(-1, 28 * 28)
         x = self.fc1(x)
         return F.log_softmax(x, dim=1) if self.log_prob else F.softmax(x, dim=1)
+
+    def reset_parameters(self):
+        self.fc1.reset_parameters()

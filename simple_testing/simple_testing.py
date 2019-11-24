@@ -23,15 +23,21 @@ def run(f, optimizer, epsilon=0.1, epochs=100, verbosity=1):
         print_epoch(0, f, x, epsilon)
 
     for e in range(1, epochs + 1):
-        x = optimizer.step_not_ml(f, x, is_verbose=(verbosity >= 2))
-        f_x_vector.append(f.eval(x))
-        if verbosity >= 2:
-            print_epoch(e, f, x, epsilon)
+        try:
+            x = optimizer.step_not_ml(f, x)
+            f_x_vector.append(f.eval(x))
+            if verbosity >= 2:
+                print_epoch(e, f, x, epsilon)
 
-        if steps_to_fosp == epochs+1 and is_first_order_stationary_point(f, x, epsilon):
-            steps_to_fosp = e
-        if steps_to_sosp == epochs+1 and is_second_order_stationary_point(f, x, epsilon):
-            steps_to_sosp = e
+            if steps_to_fosp == epochs+1 and is_first_order_stationary_point(f, x, epsilon):
+                steps_to_fosp = e
+            if steps_to_sosp == epochs+1 and is_second_order_stationary_point(f, x, epsilon):
+                steps_to_sosp = e
+        except:
+            x = f.random_init()
+            f_x_vector.append(f.eval(x))
+            steps_to_fosp = epochs+1
+            steps_to_sosp = epochs+1
 
     if verbosity >= 1:
         if steps_to_fosp == epochs+1:
@@ -49,7 +55,7 @@ def run(f, optimizer, epsilon=0.1, epochs=100, verbosity=1):
     #    plot_results(epochs, f_x_vector)
     return [steps_to_fosp, steps_to_sosp, f_x_vector]
 
-def run_trials(f, optimizer, trials=1000, epsilon=0.1, epochs=200, verbosity=0):
+def run_trials(f, optimizer, trials=1000, epsilon=0.1, epochs=200, verbosity=0, tag=''):
     if verbosity >= 0:
         print(f.as_string() + "\n")
 
@@ -58,13 +64,13 @@ def run_trials(f, optimizer, trials=1000, epsilon=0.1, epochs=200, verbosity=0):
     list_losses = []
     count_no_terminate = 0
     for i in range(trials):
-        [fosp, sosp, losses] = run(f, optimizer, epsilon=epsilon, epochs=epochs, verbosity=verbosity, create_plot=False)
+        [fosp, sosp, losses] = run(f, optimizer, epsilon=epsilon, epochs=epochs, verbosity=verbosity)
         list_steps_to_fosp.append(fosp)
         list_steps_to_sosp.append(sosp)
         list_losses.append(losses)
         if verbosity >= 1:
             print("\nTrial " + str(i))
-    fname = f'./log/{f.get_name()}-{datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")}'
+    fname = f'./log/{f.get_name()}-{tag}-{datetime.datetime.now().strftime("%m-%dT%H:%M:%S")}'
     if not os.path.exists('./log'):
         os.makedirs('./log')
     with open(fname, 'wb') as logfile:
@@ -72,28 +78,12 @@ def run_trials(f, optimizer, trials=1000, epsilon=0.1, epochs=200, verbosity=0):
         d = {'name': f.get_name(),
              'trials': trials,
              'epochs': epochs,
-             'params': self.optimizer.get_params(),
+             'params': optimizer.get_params(),
              'fosp': list_steps_to_fosp,
              'sosp': list_steps_to_sosp,
              'losses': list_losses}
         pickle.dump(d, logfile)
-
-        '''
-        if (sosp == None):
-            count_no_terminate += 1
-        else:
-            list_steps_to_fosp.append(fosp)
-            list_steps_to_sosp.append(sosp)
-
-    if verbosity >= 0:
-        print("Trials without convergence in " + str(epochs) + " epochs: " + str(count_no_terminate))
-    bins = np.linspace(0, epochs, epochs)
-    plt.hist([list_steps_to_fosp, list_steps_to_sosp], bins, label=['Steps to FOSP', 'Steps to SOSP'])
-    plt.legend(loc='upper right')
-    plt.xlabel('epochs to convergence')
-    plt.ylabel('number of trials')
-    plt.show()
-    '''
+    return fname
 
 
 def plot_results(epochs, f_x_vector):

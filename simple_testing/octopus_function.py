@@ -48,7 +48,7 @@ class Octopus:
         elif u1 >= 2 * tau and u1 <= 6 * tau and u2 >= 2 * tau and u2 <= 6 * tau:
             return L * (u1 - 4 * tau) ** 2 + L * (u2 - 4 * tau) ** 2 - 2 * v
         else:
-            print("ERROR: Out of domain!")
+            #print("ERROR: Out of domain!")
             raise ValueError
 
     def h_grad(self, u1, u2):
@@ -66,7 +66,8 @@ class Octopus:
         elif u1 >= 2 * tau and u1 <= 6 * tau and u2 >= 2 * tau and u2 <= 6 * tau:
             return np.asarray([2 * L * (u1 - 4 * tau), 2 * L * (u2 - 4 * tau)])
         else:
-            print("ERROR: Out of domain!")
+            #print("ERROR: Out of domain!")
+            raise ValueError
 
     def h_hessian(self, u1, u2):
         gamma = self.gamma

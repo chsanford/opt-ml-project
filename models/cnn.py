@@ -25,3 +25,9 @@ class CNN(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return F.log_softmax(x,dim=1) if self.log_prob else F.softmax(x, dim=1)
+
+    def reset_parameters(self):
+        self.conv1.reset_parameters()
+        self.conv2.reset_parameters()
+        self.fc1.reset_parameters()
+        self.fc2.reset_parameters()

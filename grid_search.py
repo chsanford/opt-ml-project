@@ -50,6 +50,7 @@ def load_dataset(dataset):
     print_('Loading dataset...')
     data = next(iter(DataLoader(dataset, batch_size=len(dataset))))
     print_('Finished loading the dataset into memory...')
+    #print(f'# of data: {len(data[0])}')
     return data[0], data[1]
 
 
@@ -303,7 +304,6 @@ mf_nce_test = [{'NCE_s': [(1, 10), None]}]
 # best: NCE never invoked.
 
 state_dict = get_pretrain_state()
-
 # The following two lines reproduce our grid search.
 # Vanilla GD & Vanilla GD with Noise
 run(MatrixFactorization, ml_dataset,
@@ -319,10 +319,9 @@ run(MatrixFactorization, ml_dataset,
     initial_state=state_dict,
     max_epochs=max_epochs, cv=cv, verbose=True)
 
-
-# ===============
+# ==============================
 # FULLY CONNECTED NEURAL NETWORK
-# ===============
+# ==============================
 
 fixed1 = {'noise_r': 0, 'momentum': 0, 'NCE': False, 'noise_eps': 0.1}
 fixed2 = {'noise_r': 0, 'NCE': False, 'noise_eps': 0.1}
@@ -348,12 +347,12 @@ fnn_NCE3 = [{'NCE_s': [(5, 7), 1]}] #10 runs, best: s=7
 
 fnn_all1 = [{'NCE_s': [(2, 8), 2]}] #5 runs, best: s=4, loss=0.241248 (+/-0.004)
 # [all] NCE_s=4, loss=0.241248 (+/-0.004)
-#run(FFNN, mnist_dataset, fnn_all1, fixed_params={'lr': 0.18, 'momentum': 0.95, 'noise_r': 0.1, 'noise_eps': 0.1, 'noise_T': 50}, max_epochs=max_epochs, verbose=True, num_run=5)
+run(FFNN, mnist_dataset, fnn_all1, fixed_params={'lr': 0.18, 'momentum': 0.95, 'noise_r': 0.1, 'noise_eps': 0.1, 'noise_T': 50}, max_epochs=max_epochs, verbose=True, num_run=5)
 
 
-# ===============
+# ============================
 # CONVOLUTIONAL NEURAL NETWORK
-# ===============
+# ============================
 cnn_gd1 = [{'lr': [(0.01, 10), None]}] #best: 0.1 
 cnn_gd2 = [{'lr': [(0.05, 0.3), 4]}] #best: 0.2, loss=0.030520
 cnn_gd3 = [{'lr': [(0.12, 0.26), 6]}] #best: 0.26, loss=0.009335, but not stable
@@ -364,5 +363,5 @@ cnn_noise1 = [{'noise_r': [(0.01, 1), None], 'noise_T': [(0, 100), 1]}] #2 runs,
 #run(CNN, mnist_dataset, cnn_gd3, fixed_params={'momentum': 0,'noise_r': 0}, max_epochs=max_epochs, verbose=True, data=3000)
 #run(CNN, mnist_dataset, cnn_agd1, fixed_params={'noise_r': 0}, max_epochs=max_epochs, verbose=True, data=3000)
 #run(CNN, mnist_dataset, cnn_agd2, fixed_params={'noise_r': 0}, max_epochs=200, verbose=True, data=3000, num_run=3)
-run(CNN, mnist_dataset, cnn_nce1, fixed_params={'lr': 0.05, 'momentum': 0.9, 'noise_r': 0}, max_epochs=200, verbose=True, data=3000, num_run=3)
-run(CNN, mnist_dataset, cnn_noise1, fixed_params={'lr': 0.05, 'momentum': 0.9}, max_epochs=200, verbose=True, data=3000, num_run=2)
+#run(CNN, mnist_dataset, cnn_nce1, fixed_params={'lr': 0.05, 'momentum': 0.9, 'noise_r': 0}, max_epochs=200, verbose=True, data=3000, num_run=3)
+#run(CNN, mnist_dataset, cnn_noise1, fixed_params={'lr': 0.05, 'momentum': 0.9}, max_epochs=200, verbose=True, data=3000, num_run=2)

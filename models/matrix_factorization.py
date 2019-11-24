@@ -16,3 +16,7 @@ class MatrixFactorization(nn.Module):
     def forward(self, idxs):
         u_idxs, v_idxs = idxs[:, 0], idxs[:, 1]
         return (self.U(u_idxs) * self.V(v_idxs)).sum(1)
+
+    def reset_parameters(self):
+        self.U.reset_parameters()
+        self.V.reset_parameters()

@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
+from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
 from ml_testing.ml_testing import MLTest
@@ -22,23 +23,44 @@ class MnistTest(MLTest):
 
     def __init__(self, ff=True):
         MLTest.__init__(self)
-        self.network = FFNN() if ff else CNN()
+        self.model = FFNN() if ff else CNN()
+        self.cnn = (not ff)
+        self.dataset = torchvision.datasets.MNIST(
+                'data/mnist/train',
+                train=True,
+                download=True,
+                transform=torchvision.transforms.Compose([
+                    torchvision.transforms.ToTensor(),
+                    torchvision.transforms.Normalize((0.1307,), (0.3081,))
+                    ])
+                )
+        print('Loading dataset...')
+        self.data = next(iter(DataLoader(self.dataset, batch_size=len(self.dataset))))
+        print('Finished loading the dataset into memory...') 
 
 
-    def run(self, n_epochs, optimizer, sgd=False, log=False):
+    def run(self, n_epochs, optimizer, sgd=False, log=False, trials=1, tag=''):
         if self.view_example_images:
             self.visualize_data()
-        super().run(n_epochs,
-                    self.network,
+        return super().run(n_epochs,
+                    self.model,
                     optimizer,
                     self.get_train_loader(sgd),
                     self.get_test_loader(),
                     MnistTest.loss,
-                    sgd,
+                    sgd, trials=trials, tag=tag,
                     log=log)
 
 
     def get_train_loader(self, sgd=False):
+        if not self.cnn:
+            return self.data
+        else:
+            ret = []
+            ret.append(self.data[0][range(3000)])
+            ret.append(self.data[1][range(3000)])
+            return ret
+        '''
         batch_size_train = 1 if sgd else 60000  # all samples
         train_loader = torch.utils.data.DataLoader(
             torchvision.datasets.MNIST(
@@ -54,7 +76,7 @@ class MnistTest(MLTest):
             shuffle=True
         )
         return train_loader
-
+        '''
 
     def get_test_loader(self):
         batch_size_test = 1000
