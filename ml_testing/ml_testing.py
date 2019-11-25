@@ -56,7 +56,9 @@ class MLTest():
 
         for i in range(trials):
             print(f'Trial: {i}')
-            self.network.reset_parameters()
+            self.optimizer.initialize()
+            if i > 0:
+                self.network.reset_parameters()
             for epoch in range(1, n_epochs + 1):
                 self.epoch_start = time.time()
                 self.train(epoch, i)

@@ -27,12 +27,16 @@ class MatrixFactorizationTest(MLTest):
         self.model = MatrixFactorization(n_users, n_movies, self.r)
 
         if load_model:
-            print(f'Loading model from {self.path}')
-            state_dict = torch.load(self.path)
-            self.model.load_state_dict(state_dict, strict=True)
+            self.load_model()
+
+    def load_model(self):
+        print(f'Loading model from {self.path}')
+        state_dict = torch.load(self.path)
+        self.model.load_state_dict(state_dict, strict=True)
 
 
     def run(self, n_epochs, optimizer, sgd=False, save_model=False, log=False, trials=1, tag=''):
+        self.load_model()
         return super().run(n_epochs,
                     self.model,
                     optimizer,

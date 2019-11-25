@@ -34,6 +34,23 @@ class GradientDescent(Optimizer):
         self.NCE_gamma = pow((1-momentum), 2) / lr
         self.is_verbose = is_verbose
 
+    def initialize(self, f=None, x=None):
+        if self.is_ml:
+            params = []
+            for group in self.param_groups:
+                for p in group['params']:
+                    params.append(p)
+            param_state = self.state[params[0]]
+            param_state['noise_count'] = 0
+            for p in params:
+                param_state = self.state[p]
+                param_state['momentum_buffer'] = torch.zeros(p.size())
+        else:
+            state = self.state[f.get_name()]
+            state['noise_count'] = 0
+            state['momentum_buffer'] = np.zeros(x.size)
+
+
 
     # Returns a dictionary of optimizer parameter values.
     def get_params(self):

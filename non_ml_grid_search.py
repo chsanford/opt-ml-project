@@ -143,6 +143,7 @@ oct_fixed_agd = {'noise_r': 0, 'NCE': False, 'noise_eps': 0.1}
 oct_agd_1 = [{'lr': [(0.0001, 10), None], 'momentum': [(0.1,0.9), 7]}]
 oct_agd_2 = [{'lr': [(0.02, 0.3), 13], 'momentum': [(0.1, 0.9), 7]}]
 oct_agd_3 = [{'lr': [(0.04, 0.12), 7], 'momentum': [(0.6, 0.8), 3]}]
+oct_agd_4 = [{'lr': [(0.06, 0.07), 0], 'momentum': [(0.6, 0.7), 0]}]
 ### choose lr=0.07, momentum=0.7 for AGD
 ### first: 33.965 (+/-8.796), second: 37.500 (+/-9.347)
 oct_fixed_noise = {'lr': 0.07, 'momentum':0.7, 'NCE': False, 'noise_eps': 0.1}
@@ -164,7 +165,7 @@ oct_all_1 = [{'NCE_s': [(3, 8), 4]}] # s=8
 oct_all_2 = [{'NCE_s': [(7, 12), 4]}] # s=10
 ### choose s=10
 ### first: 18.828 (+/-4.231), second: 18.928 (+/-4.128)
-#run(Octopus(), oct_all_2, fixed_params=oct_fixed_all, max_epochs=80, num_runs=500, metric='second', eps=0.1, verbose=True)
+run(Octopus(), oct_agd_4, fixed_params=oct_fixed_agd, max_epochs=150, num_runs=5000, metric='second', eps=0.1, verbose=True)
 
 
 # Cosine function

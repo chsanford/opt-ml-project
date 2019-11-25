@@ -42,6 +42,7 @@ class MnistTest(MLTest):
     def run(self, n_epochs, optimizer, sgd=False, log=False, trials=1, tag=''):
         if self.view_example_images:
             self.visualize_data()
+        self.model.reset_parameters()
         return super().run(n_epochs,
                     self.model,
                     optimizer,

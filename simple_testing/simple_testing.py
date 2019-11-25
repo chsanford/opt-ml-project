@@ -17,12 +17,16 @@ def run(f, optimizer, epsilon=0.1, epochs=100, verbosity=1):
     steps_to_fosp = epochs+1
     steps_to_sosp = epochs+1
 
+
     x = f.random_init()
+    optimizer.initialize(f, x)
     f_x_vector = [f.eval(x)]
     if verbosity >= 2:
         print_epoch(0, f, x, epsilon)
 
     for e in range(1, epochs + 1):
+        if verbosity >= 1:
+            print(f'epoch {e}: {f.eval(x)}')
         try:
             x = optimizer.step_not_ml(f, x)
             f_x_vector.append(f.eval(x))
@@ -39,7 +43,7 @@ def run(f, optimizer, epsilon=0.1, epochs=100, verbosity=1):
             steps_to_fosp = epochs+1
             steps_to_sosp = epochs+1
 
-    if verbosity >= 1:
+    if verbosity >= 2:
         if steps_to_fosp == epochs+1:
             print("Did not converge to a " + str(epsilon) + "-first-order stationary-point.")
         else:
@@ -55,7 +59,7 @@ def run(f, optimizer, epsilon=0.1, epochs=100, verbosity=1):
     #    plot_results(epochs, f_x_vector)
     return [steps_to_fosp, steps_to_sosp, f_x_vector]
 
-def run_trials(f, optimizer, trials=1000, epsilon=0.1, epochs=200, verbosity=0, tag=''):
+def run_trials(f, optimizer, trials=1000, epsilon=0.1, epochs=200, verbosity=1, tag=''):
     if verbosity >= 0:
         print(f.as_string() + "\n")
 
