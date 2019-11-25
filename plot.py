@@ -30,7 +30,7 @@ ml_dataset = MovieLensDataset(train=True)
 
 
 
-def print_(s, filename='log/data_fnn.txt'):
+def print_(s, filename='log/data_cnn.txt'):
     print(s)
     with open(filename, 'a') as fp:
         print(s, file=fp)
@@ -148,20 +148,20 @@ fig.savefig("oct_loss.png", dpi=600)
 fnn_test = MnistTest(ff=True)
 fnn_optimizer = dict()
 #fnn_optimizer['gd'] = GradientDescent(fnn_test.model.parameters(), is_ml=True, lr=0.25, momentum=0, noise_r=0, NCE=False, is_verbose=False)
-#fnn_optimizer['agd'] = GradientDescent(fnn_test.model.parameters(), is_ml=True, lr=0.18, momentum=0.95, noise_r=0, NCE=False, is_verbose=False)
-#fnn_optimizer['agd_noise'] = GradientDescent(fnn_test.model.parameters(), is_ml=True, lr=0.18, momentum=0.95, noise_r=0.1, noise_T=50, noise_eps=0.1, NCE=False, is_verbose=False)
-#fnn_optimizer['agd_NCE'] = GradientDescent(fnn_test.model.parameters(), is_ml=True, lr=0.18, momentum=0.95, noise_r=0, noise_T=50, noise_eps=0.1, NCE=True, NCE_s=0.1, is_verbose=False)
-fnn_optimizer['all'] = GradientDescent(fnn_test.model.parameters(), is_ml=True, lr=0.18, momentum=0.95, noise_r=0.1, noise_T=50, noise_eps=0.1, NCE=True, NCE_s=0.1, is_verbose=False)
-'''
+fnn_optimizer['agd'] = GradientDescent(fnn_test.model.parameters(), is_ml=True, lr=0.18, momentum=0.95, noise_r=0, NCE=False, is_verbose=False)
+fnn_optimizer['agd_noise'] = GradientDescent(fnn_test.model.parameters(), is_ml=True, lr=0.18, momentum=0.95, noise_r=0.1, noise_T=50, noise_eps=0.1, NCE=False, is_verbose=False)
+fnn_optimizer['agd_NCE'] = GradientDescent(fnn_test.model.parameters(), is_ml=True, lr=0.18, momentum=0.95, noise_r=0, noise_T=50, noise_eps=0.1, NCE=True, NCE_s=0.1, is_verbose=False)
+#fnn_optimizer['all'] = GradientDescent(fnn_test.model.parameters(), is_ml=True, lr=0.18, momentum=0.95, noise_r=0.1, noise_T=50, noise_eps=0.1, NCE=True, NCE_s=0.1, is_verbose=False)
 # CNN optimizers
-cnn_test = MnistTest(ff=False)
-cnn_optimizer = dict()
+#cnn_test = MnistTest(ff=False)
+#cnn_optimizer = dict()
 #cnn_optimizer['gd'] = GradientDescent(cnn_test.model.parameters(), is_ml=True, lr=0.26, momentum=0, noise_r=0, NCE=False, is_verbose=False)
 #cnn_optimizer['agd'] = GradientDescent(cnn_test.model.parameters(), is_ml=True, lr=0.05, momentum=0.9, noise_r=0, NCE=False, is_verbose=False)
 #cnn_optimizer['agd_noise'] = GradientDescent(cnn_test.model.parameters(), is_ml=True, lr=0.05, momentum=0.9, noise_r=1, noise_T=50, NCE=False, is_verbose=False)
-cnn_optimizer['agd_NCE'] = GradientDescent(cnn_test.model.parameters(), is_ml=True, lr=0.05, momentum=0.9, noise_r=0, NCE=True, NCE_s=0.1, is_verbose=False)
-cnn_optimizer['all'] = GradientDescent(cnn_test.model.parameters(), is_ml=True, lr=0.05, momentum=0.9, noise_r=1, noise_T=50, NCE=True, NCE_s=0.1, is_verbose=False)
+#cnn_optimizer['agd_NCE'] = GradientDescent(cnn_test.model.parameters(), is_ml=True, lr=0.05, momentum=0.9, noise_r=0, NCE=True, NCE_s=0.1, is_verbose=False)
+#cnn_optimizer['all'] = GradientDescent(cnn_test.model.parameters(), is_ml=True, lr=0.05, momentum=0.9, noise_r=1, noise_T=50, NCE=True, NCE_s=0.1, is_verbose=False)
 
+'''
 # Matrix Factorization optimizers
 mf_test = MatrixFactorizationTest(load_model=True)
 mf_optimizer = dict()
@@ -195,25 +195,26 @@ for name, optimizer in cnn_optimizer.items():
     all_filenames['cnn'][name] = cnn_test.run(epochs['cnn'], optimizer, log=True, trials=trials['cnn'], tag=name)
 '''
 
-all_filenames['fnn']['gd']='./log/FFNN-gd-11-24T03:42:28'
 '''
-all_filenames['fnn']['agd']='./log/FFNN-agd-11-24T04:27:18'
-all_filenames['fnn']['agd_noise']='./log/FFNN-agd_noise-11-24T05:12:12'
-all_filenames['fnn']['agd_NCE']='./log/FFNN-agd_NCE-11-24T14_59_08'
-all_filenames['fnn']['all']='./log/FFNN-all-11-24T16_08_14'
+all_filenames['fnn']['gd']='./log/FFNN-gd-11-24T03:42:28'
+#all_filenames['fnn']['agd']='./log/FFNN-agd-11-24T04:27:18'
+#all_filenames['fnn']['agd_noise']='./log/FFNN-agd_noise-11-24T05:12:12'
+#all_filenames['fnn']['agd_NCE']='./log/FFNN-agd_NCE-11-24T14_59_08'
+all_filenames['fnn']['all']='./log/FFNN-all-11-24T19:53:28'
+#all_filenames['fnn']['all']='./log/FFNN-all-11-24T16_08_14'
 
-
-all_filenames['cnn']['gd'] = './log/CNN-gd-11-24T07:00:39'
-all_filenames['cnn']['agd'] = './log/CNN-agd-11-24T07:38:06'
-all_filenames['cnn']['agd_noise'] = './log/CNN-agd_noise-11-24T08:15:14'
-#all_filenames['cnn']['agd_NCE'] = './log/CNN-agd_NCE-11-24T08:55:03'
-#all_filenames['cnn']['all'] = './log/CNN-all-11-24T09:34:29'
+all_filenames['cnn']['gd'] = './log/CNN-gd-11-24T16:14:19'
+#all_filenames['cnn']['agd'] = './log/CNN-agd-11-24T07:38:06'
+#all_filenames['cnn']['agd_noise'] = './log/CNN-agd_noise-11-24T08:15:14'
+all_filenames['cnn']['agd_NCE'] = './log/CNN-agd_NCE-11-24T17:49:53'
+#all_filenames['cnn']['all'] = './log/'
 
 all_filenames['mf']['gd'] = './log/MatrixFactorization-gd-11-24T14:49:30'
 all_filenames['mf']['gd_noise'] = './log/MatrixFactorization-gd_noise-11-24T14:51:32'
 all_filenames['mf']['agd'] = './log/MatrixFactorization-agd-11-24T14:54:55'
 all_filenames['mf']['all'] = './log/MatrixFactorization-all-11-24T14:58:20'
 '''
+
 # save average data
 for fname, filenames in all_filenames.items():
     print_('==================')
@@ -237,6 +238,7 @@ for fname, filenames in all_filenames.items():
 
 
 
+'''
 # make loss graph
 # all
 for fname, filenames in all_filenames.items():
@@ -254,7 +256,6 @@ for fname, filenames in all_filenames.items():
     ax.legend()
     fig.savefig(fname+"_all.png", dpi=600)
 
-'''
 # agd
 for fname, filenames in all_filenames.items():
     logs = load_logs([filenames['gd'], filenames['agd']])
