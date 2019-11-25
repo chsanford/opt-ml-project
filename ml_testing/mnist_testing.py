@@ -61,23 +61,6 @@ class MnistTest(MLTest):
             ret.append(self.data[0][range(3000)])
             ret.append(self.data[1][range(3000)])
             return ret
-        '''
-        batch_size_train = 1 if sgd else 60000  # all samples
-        train_loader = torch.utils.data.DataLoader(
-            torchvision.datasets.MNIST(
-                'data/mnist/train',
-                train=True,
-                download=True,
-                transform=torchvision.transforms.Compose([
-                    torchvision.transforms.ToTensor(),
-                    torchvision.transforms.Normalize((0.1307,), (0.3081,))
-                ])
-            ),
-            batch_size=batch_size_train,
-            shuffle=True
-        )
-        return train_loader
-        '''
 
     def get_test_loader(self):
         batch_size_test = 1000

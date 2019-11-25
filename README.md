@@ -5,7 +5,9 @@
 ---
 We present experimental results for a modification of accelerated gradient descent introduced in [Jin et al., 2017](https://arxiv.org/abs/1711.10456).
 
-To reproduce the experiments found in our report, run `simple_functions_test.py` to automatically generate plots for the non-ML functions. For the ML experiments, first run `main.py`, which will save training logs to a `logs` folder. These can be turned into plots using the `plot_ml.ipynb` notebook.
+To reproduce the experiments found in our report, run `plot.py` to automatically test all optimizers on all functions and generate plots.
+
+To test a particular optimizer on a particular function, follow the examples of optimizers in `main.py` and run it. Training logs are saved in `logs` folder automatically. These can be turned into plots using the `plot_ml.ipynb` notebook.
 
 Note that the training datasets ([MNIST](https://pytorch.org/docs/stable/_modules/torchvision/datasets/mnist.html) from torchvision and [MovieLens](https://grouplens.org/datasets/movielens/)) will automatically be downloaded into a `data` folder when the scripts are run.
 

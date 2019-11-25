@@ -322,32 +322,38 @@ run(MatrixFactorization, ml_dataset,
 # ==============================
 # FULLY CONNECTED NEURAL NETWORK
 # ==============================
-
-fixed1 = {'noise_r': 0, 'momentum': 0, 'NCE': False, 'noise_eps': 0.1}
-fixed2 = {'noise_r': 0, 'NCE': False, 'noise_eps': 0.1}
-fixed_fnn3 = {'lr': 0.18, 'momentum': 0.95, 'NCE': False, 'noise_eps': 0.1}
-
 fnn_gd1 = [{'lr': [(0.05, 0.4), 6]}]  # best: 0.25
 fnn_gd2 = [{'lr': [(0.2, 0.3), 4]}]  # best: 0.3, but not stable
+run(FFNN, mnist_dataset, fnn_gd1, fixed_params={'momentum': 0, 'noise_r': 0, 'NCE': False}, max_epochs=max_epochs, verbose=True, num_run=5)
+run(FFNN, mnist_dataset, fnn_gd2, fixed_params={'momentum': 0, 'noise_r': 0, 'NCE': False}, max_epochs=max_epochs, verbose=True, num_run=5)
 # [GD] lr=0.25, loss~=0.28
 
 fnn_agd1 = [{'lr': [(0.05, 0.4), 6], 'momentum': [(0.1, 0.9), 7]}]  # best: lr=0.15, momentum=0.9
 fnn_agd2 = [{'lr': [(0.12, 0.3), 8], 'momentum': [(0.9, 0.95), 0]}]  # best: lr=0.18, momentum=0.95, quite robust for lr=0.12~0.2
+run(FFNN, mnist_dataset, fnn_agd1, fixed_params={'noise_r': 0, 'NCE': False}, max_epochs=max_epochs, verbose=True, num_run=5)
+run(FFNN, mnist_dataset, fnn_agd2, fixed_params={'noise_r': 0, 'NCE': False}, max_epochs=max_epochs, verbose=True, num_run=5)
 # [AGD] lr=0.18, momentum=0.95, loss~=0.24
 
 fnn_noise1 = [{'noise_r': [(0.001, 10), None], 'noise_T': [(0, 100), 1], 'noise_eps': [(0.001, 10), None]}] #best: T=100, eps=1, r=0.01, but only runned for 1 time, so result not stable
 fnn_noise2 = [{'noise_r': [(0.01, 0.1), None], 'noise_T': [(0, 100), 1]}] #fix eps=0.1, best: T=100, r=0.1
 fnn_noise3 = [{'noise_r': [(0.05, 0.2), 2], 'noise_T': [(50, 100), 0]}] #fix eps=0.1, run 10 times, best: T=50, r=0.1
-# [AGD+noise] noise_r=0.1, noise_eps=0.1, noise_T=50, loss = 0.242244 (+/-0.005)
+run(FFNN, mnist_dataset, fnn_noise1, fixed_params={'lr': 0.18, 'momentum': 0.95, 'NCE': False}, max_epochs=max_epochs, verbose=True, num_run=1)
+run(FFNN, mnist_dataset, fnn_noise2, fixed_params={'lr': 0.18, 'momentum': 0.95, 'NCE': False}, max_epochs=max_epochs, verbose=True, num_run=5)
+run(FFNN, mnist_dataset, fnn_noise3, fixed_params={'lr': 0.18, 'momentum': 0.95, 'NCE': False}, max_epochs=max_epochs, verbose=True, num_run=5)
+# [AGD + noise] noise_r=0.1, noise_eps=0.1, noise_T=50, loss = 0.242244 (+/-0.005)
 
 fnn_NCE1 = [{'NCE_s': [(0.01, 10), None]}] #1 run, best: s=10, (0.1, 1 also get similar loss)
 fnn_NCE2 = [{'NCE_s': [(2, 8), 2]}] #5 runs, best: s=6, loss=0.240498 (+/-0.004)
 fnn_NCE3 = [{'NCE_s': [(5, 7), 1]}] #10 runs, best: s=7
-# [AGD+NCE] NCE_s=7, loss = 0.241532 (+/-0.005)
+run(FFNN, mnist_dataset, fnn_NCE1, fixed_params={'lr': 0.18, 'momentum': 0.95, 'NCE': True, 'noise_r': 0}, max_epochs=max_epochs, verbose=True, num_run=1)
+run(FFNN, mnist_dataset, fnn_NCE2, fixed_params={'lr': 0.18, 'momentum': 0.95, 'NCE': True, 'noise_r': 0}, max_epochs=max_epochs, verbose=True, num_run=5)
+run(FFNN, mnist_dataset, fnn_NCE3, fixed_params={'lr': 0.18, 'momentum': 0.95, 'NCE': True, 'noise_r': 0}, max_epochs=max_epochs, verbose=True, num_run=10)
+# [AGD + NCE] NCE_s=7, loss = 0.241532 (+/-0.005)
 
 fnn_all1 = [{'NCE_s': [(2, 8), 2]}] #5 runs, best: s=4, loss=0.241248 (+/-0.004)
-# [all] NCE_s=4, loss=0.241248 (+/-0.004)
 run(FFNN, mnist_dataset, fnn_all1, fixed_params={'lr': 0.18, 'momentum': 0.95, 'noise_r': 0.1, 'noise_eps': 0.1, 'noise_T': 50}, max_epochs=max_epochs, verbose=True, num_run=5)
+# [all] NCE_s=4, loss=0.241248 (+/-0.004)
+
 
 
 # ============================
@@ -356,12 +362,20 @@ run(FFNN, mnist_dataset, fnn_all1, fixed_params={'lr': 0.18, 'momentum': 0.95, '
 cnn_gd1 = [{'lr': [(0.01, 10), None]}] #best: 0.1 
 cnn_gd2 = [{'lr': [(0.05, 0.3), 4]}] #best: 0.2, loss=0.030520
 cnn_gd3 = [{'lr': [(0.12, 0.26), 6]}] #best: 0.26, loss=0.009335, but not stable
+run(CNN, mnist_dataset, cnn_gd1, fixed_params={'momentum': 0,'noise_r': 0}, max_epochs=max_epochs, verbose=True, data=3000)
+run(CNN, mnist_dataset, cnn_gd2, fixed_params={'momentum': 0,'noise_r': 0}, max_epochs=max_epochs, verbose=True, data=3000)
+run(CNN, mnist_dataset, cnn_gd3, fixed_params={'momentum': 0,'noise_r': 0}, max_epochs=max_epochs, verbose=True, data=3000)
+# [GD] lr=0.26
+
 cnn_agd1 = [{'lr': [(0.05, 0.4), 6], 'momentum': [(0.3, 0.9), 1]}] #best: lr=0.05, momentum=0.9, loss=0.016273
-cnn_agd2 = [{'lr': [(0.05, 0.25), 3], 'momentum': [(0.5, 0.9), 1]}] #best: 
-cnn_nce1 = [{'NCE_s': [(2,8), 2]}] #3 runs, best: s=6, loss=0.002380 (+/-0.001)
+run(CNN, mnist_dataset, cnn_agd1, fixed_params={'noise_r': 0}, max_epochs=max_epochs, verbose=True, data=3000)
+# [AGD] lr=0.05, momentum=0.9
+
 cnn_noise1 = [{'noise_r': [(0.01, 1), None], 'noise_T': [(0, 100), 1]}] #2 runs, best: r=1, T=50
-#run(CNN, mnist_dataset, cnn_gd3, fixed_params={'momentum': 0,'noise_r': 0}, max_epochs=max_epochs, verbose=True, data=3000)
-#run(CNN, mnist_dataset, cnn_agd1, fixed_params={'noise_r': 0}, max_epochs=max_epochs, verbose=True, data=3000)
-#run(CNN, mnist_dataset, cnn_agd2, fixed_params={'noise_r': 0}, max_epochs=200, verbose=True, data=3000, num_run=3)
-#run(CNN, mnist_dataset, cnn_nce1, fixed_params={'lr': 0.05, 'momentum': 0.9, 'noise_r': 0}, max_epochs=200, verbose=True, data=3000, num_run=3)
-#run(CNN, mnist_dataset, cnn_noise1, fixed_params={'lr': 0.05, 'momentum': 0.9}, max_epochs=200, verbose=True, data=3000, num_run=2)
+run(CNN, mnist_dataset, cnn_noise1, fixed_params={'lr': 0.05, 'momentum': 0.9}, max_epochs=200, verbose=True, data=3000, num_run=2)
+# [AGD + noise] noise_r=1, noise_T=50
+
+cnn_nce1 = [{'NCE_s': [(2,8), 2]}] #3 runs, best: s=6, loss=0.002380 (+/-0.001)
+run(CNN, mnist_dataset, cnn_nce1, fixed_params={'lr': 0.05, 'momentum': 0.9, 'noise_r': 0}, max_epochs=200, verbose=True, data=3000, num_run=3)
+# [AGD + NCE] NCE_s=6
+

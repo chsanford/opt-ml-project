@@ -38,9 +38,7 @@ class MLTest():
         self.loss = loss
         self.sgd = sgd
         self.train_losses = [[] for i in range(trials)]
-#        self.train_counter = [[] for i in range(trials)]
         self.test_losses = [[] for i in range(trials)]
-#        self.test_counter = [i * len(self.train_loader[0]) for i in range(n_epochs + 1)]
         idt = lambda x: x
         idt.__name__ = ''
         # report rmse if doing matrix factorization
@@ -50,7 +48,6 @@ class MLTest():
 
         start = time.time()
         self.epoch_start = start
-        #self.test()
 
         print(f'Training for {n_epochs} epochs! sgd? {sgd} / logging? {log}')
 
@@ -72,15 +69,6 @@ class MLTest():
         if log:
             return self._log_training(tag)
 
-        '''
-        fig = plt.figure()
-        plt.plot(self.train_counter[0], self.train_losses[0], color='blue')
-        plt.scatter(self.test_counter, self.test_losses[0], color='red')
-        plt.legend(['Train Loss', 'Test Loss'], loc='upper right')
-        plt.xlabel('number of training examples seen')
-        plt.ylabel('loss')
-        plt.show()
-        '''
 
     # Saves the model/optimizer info and the training/test losses to a pickle for later plots.
     def _log_training(self, tag=''):
@@ -131,7 +119,6 @@ class MLTest():
                 self.loss_metric(avg_loss)))
 
             self.train_losses[trial].append(self.loss_metric(avg_loss))
-#            self.train_counter[trial].append(len(data) * batch_idx + (epoch - 1) * n_train)
             total_loss = 0
 
 

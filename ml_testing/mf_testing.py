@@ -50,13 +50,6 @@ class MatrixFactorizationTest(MLTest):
 
     def get_train_loader(self, sgd=False):
         return self.data
-        '''
-        return torch.utils.data.DataLoader(
-            self.train_dataset,
-            batch_size=1 if sgd else len(self.train_dataset),
-            shuffle=sgd
-        )
-        '''
 
 
     def get_test_loader(self):
